@@ -1,0 +1,9 @@
+.next
+node_modules
+*.pyc
+__pycache__
+.venv
+.env
+sniper-backend/.env
+sniper-backend/models/*.joblib
+tsconfig.tsbuildinfo
