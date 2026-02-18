@@ -10,8 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.37.4",
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
+    "convex": "^1.31.7",
+    "gsap": "^3.14.2",
     "lightweight-charts": "^5.0.9",
     "lucide-react": "^0.539.0",
     "next": "14.2.32",

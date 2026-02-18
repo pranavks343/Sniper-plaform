@@ -27,6 +27,8 @@ class ZerodhaBroker(BaseBroker):
             'price': price,
             'side': side,
             'status': 'PENDING',
+            'filled_qty': 0,
+            'avg_price': None,
             'timestamp': datetime.utcnow().isoformat(),
         }
         self.orders[order_id] = order

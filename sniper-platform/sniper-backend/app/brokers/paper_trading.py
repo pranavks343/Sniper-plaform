@@ -46,14 +46,29 @@ class PaperTradingBroker(BaseBroker):
         self.orders[order_id] = order
 
         signed_qty = quantity if side == 'BUY' else -quantity
-        pos = self.positions.setdefault(symbol, {'symbol': symbol, 'quantity': 0, 'avg_price': 0.0, 'current_price': fill_price})
-        old_qty = pos['quantity']
+        pos = self.positions.setdefault(symbol, {'symbol': symbol, 'quantity': 0, 'avg_price': 0.0, 'current_price': fill_price, 'pnl': 0.0})
+        old_qty = int(pos['quantity'])
+        old_avg = float(pos['avg_price'])
         new_qty = old_qty + signed_qty
-        if new_qty != 0:
-            pos['avg_price'] = ((pos['avg_price'] * old_qty) + (fill_price * signed_qty)) / max(new_qty, 1)
+
+        # Same direction adds to exposure using weighted average.
+        if old_qty == 0 or (old_qty > 0 and signed_qty > 0) or (old_qty < 0 and signed_qty < 0):
+            total_abs = abs(old_qty) + abs(signed_qty)
+            pos['avg_price'] = ((old_avg * abs(old_qty)) + (fill_price * abs(signed_qty))) / max(total_abs, 1)
+        else:
+            # Opposite side either reduces, closes, or reverses the position.
+            if abs(signed_qty) > abs(old_qty):
+                pos['avg_price'] = fill_price
+            elif abs(signed_qty) == abs(old_qty):
+                self.positions.pop(symbol, None)
+                return order
+            # If partially reduced (abs(signed_qty) < abs(old_qty)), keep previous avg_price.
+
         pos['quantity'] = new_qty
         pos['current_price'] = fill_price
         pos['pnl'] = (pos['current_price'] - pos['avg_price']) * pos['quantity']
+        if pos['quantity'] == 0:
+            self.positions.pop(symbol, None)
         return order
 
     def modify_order(self, order_id: str, quantity: int | None = None, price: float | None = None) -> dict:
@@ -73,7 +88,7 @@ class PaperTradingBroker(BaseBroker):
         return self.orders[order_id]
 
     def get_positions(self) -> list[dict]:
-        return list(self.positions.values())
+        return [pos for pos in self.positions.values() if int(pos.get('quantity', 0)) != 0]
 
     def get_holdings(self) -> list[dict]:
         return []

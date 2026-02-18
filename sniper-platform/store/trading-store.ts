@@ -16,6 +16,8 @@ type TradingState = {
   connectRealtime: () => void;
 };
 
+let marketUnsubscribe: (() => void) | null = null;
+
 export const useTradingStore = create<TradingState>((set, get) => ({
   orders: [],
   positions: [],
@@ -33,11 +35,15 @@ export const useTradingStore = create<TradingState>((set, get) => ({
     })),
   setMarketData: (event) => set((state) => ({ marketData: [event, ...state.marketData].slice(0, 500) })),
   connectRealtime: () => {
+    // Only connect once
+    if (marketUnsubscribe) {
+      return;
+    }
     websocketClient.market.connect();
     websocketClient.orders.connect();
     websocketClient.positions.connect();
 
-    websocketClient.market.subscribe((payload) => {
+    marketUnsubscribe = websocketClient.market.subscribe((payload) => {
       get().setMarketData(payload as Record<string, unknown>);
     });
   }

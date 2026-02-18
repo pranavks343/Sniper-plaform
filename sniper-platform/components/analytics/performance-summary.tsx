@@ -14,19 +14,19 @@ export function PerformanceSummary({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div className="card-shell">
-        <p className="text-sm text-slate-500">Total P&L</p>
-        <p className="mt-2 font-heading text-2xl">{formatINR(totalPnl)}</p>
+        <p className="panel-caption">Total P&L</p>
+        <p className="mt-2 font-heading text-2xl text-ink">{formatINR(totalPnl)}</p>
       </div>
       <div className="card-shell">
-        <p className="text-sm text-slate-500">Sharpe</p>
-        <p className="mt-2 font-heading text-2xl">{sharpe.toFixed(2)}</p>
+        <p className="panel-caption">Sharpe</p>
+        <p className="mt-2 font-heading text-2xl text-ink">{sharpe.toFixed(2)}</p>
       </div>
       <div className="card-shell">
-        <p className="text-sm text-slate-500">Win Rate</p>
-        <p className="mt-2 font-heading text-2xl">{(winRate * 100).toFixed(1)}%</p>
+        <p className="panel-caption">Win Rate</p>
+        <p className="mt-2 font-heading text-2xl text-ink">{(winRate * 100).toFixed(1)}%</p>
       </div>
       <div className="card-shell">
-        <p className="text-sm text-slate-500">Max Drawdown</p>
+        <p className="panel-caption">Max Drawdown</p>
         <p className="mt-2 font-heading text-2xl text-danger">{(maxDrawdown * 100).toFixed(1)}%</p>
       </div>
     </div>

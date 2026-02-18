@@ -3,7 +3,14 @@ node_modules
 *.pyc
 __pycache__
 .venv
-.env
-sniper-backend/.env
+.env*
+!.env.example
+!.env.local.example
+!sniper-backend/.env.example
 sniper-backend/models/*.joblib
 tsconfig.tsbuildinfo
+
+# clerk configuration (can include secrets)
+/.clerk/
+convex/_generated/
+convex/.env.local

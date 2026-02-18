@@ -18,16 +18,20 @@ export function usePositions() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalPnl = positions.reduce((sum, position) => sum + position.pnl, 0);
-  const greeks = positions.reduce(
-    (acc, position) => {
-      acc.delta += position.delta;
-      acc.gamma += position.gamma;
-      acc.theta += position.theta;
-      acc.vega += position.vega;
-      return acc;
-    },
-    { delta: 0, gamma: 0, theta: 0, vega: 0 }
+  const totalPnl = useMemo(() => positions.reduce((sum, position) => sum + position.pnl, 0), [positions]);
+  const greeks = useMemo(
+    () =>
+      positions.reduce(
+        (acc, position) => {
+          acc.delta += position.delta;
+          acc.gamma += position.gamma;
+          acc.theta += position.theta;
+          acc.vega += position.vega;
+          return acc;
+        },
+        { delta: 0, gamma: 0, theta: 0, vega: 0 }
+      ),
+    [positions]
   );
 
   return useMemo(() => ({ positions, loading, error, totalPnl, greeks }), [positions, loading, error, totalPnl, greeks]);

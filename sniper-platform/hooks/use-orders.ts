@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiClient } from '@/lib/api-client';
 import type { Order } from '@/types/trading';
@@ -18,15 +18,15 @@ export function useOrders() {
       .finally(() => setLoading(false));
   }, []);
 
-  const placeOrder = async (payload: Record<string, unknown>) => {
+  const placeOrder = useCallback(async (payload: Record<string, unknown>) => {
     const order = await apiClient.execution.placeOrder(payload);
     setOrders((prev) => [order, ...prev]);
     return order;
-  };
+  }, []);
 
-  const cancelOrder = async (orderId: string) => {
+  const cancelOrder = useCallback(async (orderId: string) => {
     setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status: 'CANCELLED' } : order)));
-  };
+  }, []);
 
-  return useMemo(() => ({ orders, loading, error, placeOrder, cancelOrder }), [orders, loading, error]);
+  return useMemo(() => ({ orders, loading, error, placeOrder, cancelOrder }), [orders, loading, error, placeOrder, cancelOrder]);
 }

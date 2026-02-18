@@ -12,7 +12,6 @@ services:
       - ./:/app
     depends_on:
       - postgres
-      - redis
 
   postgres:
     image: timescale/timescaledb:latest-pg16
@@ -24,11 +23,6 @@ services:
       - '5432:5432'
     volumes:
       - sniper_postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
 
 volumes:
   sniper_postgres_data:

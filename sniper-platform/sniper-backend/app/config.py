@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import List
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,7 +15,11 @@ class Settings(BaseSettings):
     allowed_origins: List[str] = Field(default_factory=lambda: ['http://localhost:3000'])
 
     database_url: str = 'postgresql+asyncpg://postgres:postgres@localhost:5432/sniper'
-    redis_url: str = 'redis://localhost:6379/0'
+    default_user_id: str = '00000000-0000-0000-0000-000000000001'
+    convex_deployment: str = ''
+    convex_url: str = ''
+    convex_deploy_key: str = ''
+    data_encryption_key: str = ''
 
     ibm_quantum_token: str = ''
     ibm_quantum_backend: str = 'ibm_brisbane'
@@ -26,15 +31,38 @@ class Settings(BaseSettings):
     quantum_portfolio_min_assets: int = 50
     quantum_hedging_min_positions: int = 10
     quantum_timeout_ms: int = 5000
+    mandatory_analysis_heartbeat_seconds: int = 45
+    # Interval between simulated market ticks (each tick = 4 Convex mutations). Default 1.0 = 4 mutations/sec.
+    market_tick_interval_seconds: float = 1.0
 
     zerodha_api_key: str = ''
     zerodha_api_secret: str = ''
+    broker_provider: str = 'paper'
+
+    upstox_api_key: str = ''
+    upstox_api_secret: str = ''
+    upstox_redirect_uri: str = ''
+    upstox_access_token: str = ''
+
+    openai_api_key: str = ''
+    openai_model: str = 'gpt-4o-mini'
+    openai_request_timeout_seconds: float = 45.0
+    openai_retry_delay_seconds: float = 1.5
+    openai_max_retries: int = 1
 
     max_daily_loss_pct: float = 0.02
     max_drawdown_pct: float = 0.10
-    max_delta: float = 0.30
-    max_gamma: float = 0.05
+    max_delta: float = 500.0
+    max_gamma: float = 50.0
     max_vega: float = 10000.0
+
+    @property
+    def default_user_uuid(self) -> str:
+        candidate = (self.default_user_id or '').strip()
+        try:
+            return str(UUID(candidate))
+        except ValueError:
+            return str(uuid5(NAMESPACE_DNS, candidate or 'default-user'))
 
 
 @lru_cache

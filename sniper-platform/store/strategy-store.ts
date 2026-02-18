@@ -12,6 +12,7 @@ type StrategyState = {
   updateStrategy: (id: string, payload: Partial<Strategy>) => Promise<void>;
   deleteStrategy: (id: string) => Promise<void>;
   activateStrategy: (id: string) => Promise<void>;
+  deactivateStrategy: (id: string) => Promise<void>;
 };
 
 export const useStrategyStore = create<StrategyState>((set, get) => ({
@@ -37,5 +38,9 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
   activateStrategy: async (id) => {
     await apiClient.strategy.activate(id);
     await get().fetchStrategies();
-  }
+  },
+  deactivateStrategy: async (id) => {
+    await apiClient.strategy.deactivate(id);
+    await get().fetchStrategies();
+  },
 }));

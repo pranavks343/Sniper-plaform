@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 class RiskLimits(BaseModel):
     max_daily_loss_pct: float = 0.02
     max_drawdown_pct: float = 0.10
-    max_delta: float = 0.30
-    max_gamma: float = 0.05
+    max_delta: float = 500.0
+    max_gamma: float = 50.0
     max_vega: float = 10000.0
 
 

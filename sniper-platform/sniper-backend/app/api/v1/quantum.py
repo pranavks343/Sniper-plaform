@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.dependencies import Container, get_container
-from app.models.schemas.quantum import QuantumConfigUpdate
+from app.models.schemas.quantum import QuantumConfigUpdate, QuantumConnectPayload
 
 router = APIRouter(prefix='/quantum', tags=['quantum'])
 
@@ -11,6 +11,18 @@ router = APIRouter(prefix='/quantum', tags=['quantum'])
 @router.get('/status')
 async def get_status(container: Container = Depends(get_container)):
     return container.quantum_service.get_status()
+
+
+@router.post('/connect')
+async def connect(payload: QuantumConnectPayload, container: Container = Depends(get_container)) -> dict:
+    # Always succeeds — falls back to local simulation if IBM cloud is unavailable
+    container.quantum_service.connect(payload.api_token)
+    return container.quantum_service.test_connection()
+
+
+@router.post('/disconnect')
+async def disconnect(container: Container = Depends(get_container)) -> dict:
+    return container.quantum_service.disconnect()
 
 
 @router.post('/test')

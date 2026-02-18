@@ -1,14 +1,34 @@
+import { auth } from '@clerk/nextjs/server';
+
+import { CopilotBubble } from '@/components/ai/copilot-bubble';
+import { TradingViewPreload } from '@/components/charts/tradingview-preload';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  await auth.protect();
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={{ background: 'var(--tv-bg-base)' }}>
+      {/* Start loading TradingView script as soon as user enters dashboard */}
+      <TradingViewPreload />
+
+      {/* Expandable sidebar */}
       <Sidebar />
-      <div className="flex-1">
+
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="p-4 md:p-6">{children}</main>
+        <main
+          className="flex-1 overflow-auto p-4 md:p-5"
+          style={{ background: 'var(--tv-bg-base)' }}
+        >
+          {children}
+        </main>
       </div>
+
+      {/* Floating AI Copilot bubble — client component, renders on all dashboard pages */}
+      <CopilotBubble />
     </div>
   );
 }

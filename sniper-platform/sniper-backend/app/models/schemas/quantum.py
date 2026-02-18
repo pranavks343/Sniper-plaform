@@ -18,6 +18,10 @@ class QuantumConfigUpdate(BaseModel):
     quantum_timeout_ms: int | None = None
 
 
+class QuantumConnectPayload(BaseModel):
+    api_token: str | None = None
+
+
 class QuantumUsageStats(BaseModel):
     total_solves: int
     avg_solve_time_ms: float

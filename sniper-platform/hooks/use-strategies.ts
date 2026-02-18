@@ -6,10 +6,11 @@ import { useStrategyStore } from '@/store/strategy-store';
 
 export function useStrategies() {
   const store = useStrategyStore();
+  const fetchStrategies = useStrategyStore((state) => state.fetchStrategies);
 
   useEffect(() => {
-    void store.fetchStrategies();
-  }, [store]);
+    void fetchStrategies();
+  }, [fetchStrategies]);
 
   return store;
 }
