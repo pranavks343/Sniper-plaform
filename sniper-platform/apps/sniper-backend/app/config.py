@@ -26,6 +26,17 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
 
+    @field_validator('database_url', mode='before')
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Render and others give postgresql://; we need postgresql+asyncpg:// for async driver."""
+        if not v or not isinstance(v, str):
+            return v
+        s = v.strip()
+        if s.startswith('postgresql://') and not s.startswith('postgresql+asyncpg://'):
+            return 'postgresql+asyncpg://' + s.split('://', 1)[1]
+        return v
+
     database_url: str = 'postgresql+asyncpg://postgres:postgres@localhost:5432/sniper'
     default_user_id: str = '00000000-0000-0000-0000-000000000001'
     convex_deployment: str = ''

@@ -37,7 +37,20 @@ docker-compose up -d
 - ✅ Automatic HTTPS + custom domains
 - ✅ Great for demos, portfolios, college submissions
 
-**Setup Steps:**
+**Using `render.yaml` (recommended)**  
+The repo root contains a **Blueprint** (`render.yaml`) that defines the backend and a **PostgreSQL** database. When you connect the repo and deploy from the Blueprint, Render will:
+
+- Create a **PostgreSQL** database (`sniper-db`, free plan) and set **DATABASE_URL** on the backend.
+- Set **ENVIRONMENT**, **PYTHON_VERSION**, **ALLOWED_ORIGINS**, build/start/preDeploy commands, and **rootDir** from the Blueprint.
+
+**You still need to set in the Render Dashboard** (Backend → Environment):
+
+- **Secrets** (if the app uses them): `OPENAI_API_KEY`, `CLERK_JWKS_URL`, Convex keys, broker keys, etc.  
+- **ALLOWED_ORIGINS**: Update to your real frontend URL(s) if different from the default (comma-separated, e.g. `https://your-app.onrender.com,http://localhost:3000`).
+
+After the first deploy, open the backend health URL (e.g. `https://sniper-backend.onrender.com/health`) to confirm it’s running.
+
+**Setup Steps (manual alternative):**
 
 #### A. Create Render Account
 1. Go to [render.com](https://render.com)
