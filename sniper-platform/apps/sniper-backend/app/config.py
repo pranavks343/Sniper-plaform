@@ -1,41 +1,50 @@
+from __future__ import annotations
+
+import json
 from functools import lru_cache
-from typing import List
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _parse_origins(v: str) -> list[str]:
+    """Parse ALLOWED_ORIGINS from any format into a list of strings."""
+    s = (v or '').strip()
+    if not s:
+        return ['http://localhost:3000']
+    if s.startswith('['):
+        try:
+            parsed = json.loads(s)
+            return parsed if parsed else ['http://localhost:3000']
+        except json.JSONDecodeError:
+            pass
+    return [o.strip() for o in s.split(',') if o.strip()]
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        case_sensitive=False,
+    )
 
     app_name: str = 'Sniper Trading Backend'
     api_prefix: str = '/api/v1'
     environment: str = 'dev'
-    allowed_origins: List[str] = Field(default_factory=lambda: ['http://localhost:3000'])
 
-    @field_validator('allowed_origins', mode='before')
-    @classmethod
-    def parse_allowed_origins(cls, v):
-        if not v:
-            return ['http://localhost:3000']
-        if isinstance(v, list):
-            return v
-        if isinstance(v, str):
-            s = v.strip()
-            if not s:
-                return ['http://localhost:3000']
-            # Accept JSON array: ["http://a.com","http://b.com"]
-            if s.startswith('['):
-                import json
-                try:
-                    parsed = json.loads(s)
-                    return parsed if parsed else ['http://localhost:3000']
-                except json.JSONDecodeError:
-                    pass
-            # Accept comma-separated: http://a.com,http://b.com
-            return [origin.strip() for origin in s.split(',') if origin.strip()]
-        return v
+    # Plain str field — pydantic-settings will never try to JSON-decode a str.
+    # The real list is returned by the allowed_origins property.
+    allowed_origins: str = Field(
+        default='http://localhost:3000',
+        alias='ALLOWED_ORIGINS',
+        validation_alias='ALLOWED_ORIGINS',
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parsed list of allowed CORS origins."""
+        return _parse_origins(self.allowed_origins)
 
     @field_validator('database_url', mode='before')
     @classmethod
