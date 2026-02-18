@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     upstox_redirect_uri: str = ''
     upstox_access_token: str = ''
 
+    clerk_jwks_url: str = ''
+
     openai_api_key: str = ''
     openai_model: str = 'gpt-4o-mini'
     openai_request_timeout_seconds: float = 45.0

@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, verify_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/ai', tags=['ai'])
@@ -289,6 +289,7 @@ async def _assemble_context(ctx: AIChatContext, container: Container) -> str:
 async def ai_chat(
     payload: AIChatRequest,
     container: Container = Depends(get_container),
+    _: str = Depends(verify_token),
 ) -> AIChatResponse:
     settings = get_settings()
     api_key: str = getattr(settings, "openai_api_key", "") or ""

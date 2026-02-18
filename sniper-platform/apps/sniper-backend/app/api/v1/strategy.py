@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, verify_token
 from app.models.schemas.common import BaseResponse, Regime
 from app.models.schemas.strategy import StrategyCreate, StrategyOut, StrategyUpdate
 
@@ -17,21 +17,21 @@ async def _ensure_analysis_services(container: Container) -> None:
 
 
 @router.post('/', response_model=StrategyOut)
-async def create_strategy(payload: StrategyCreate, container: Container = Depends(get_container)) -> dict:
+async def create_strategy(payload: StrategyCreate, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     return await container.strategy_service.create(payload.model_dump())
 
 
 @router.get('/', response_model=list[StrategyOut])
 async def list_strategies(
-    status: str | None = Query(default=None), regime: Regime | None = Query(default=None), container: Container = Depends(get_container)
+    status: str | None = Query(default=None), regime: Regime | None = Query(default=None), container: Container = Depends(get_container), _: str = Depends(verify_token)
 ) -> list[dict]:
     await _ensure_analysis_services(container)
     return await container.strategy_service.list(status=status, regime=regime)
 
 
 @router.get('/{strategy_id}', response_model=StrategyOut)
-async def get_strategy(strategy_id: str, container: Container = Depends(get_container)) -> dict:
+async def get_strategy(strategy_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     try:
         return await container.strategy_service.get(strategy_id)
@@ -40,7 +40,7 @@ async def get_strategy(strategy_id: str, container: Container = Depends(get_cont
 
 
 @router.put('/{strategy_id}', response_model=StrategyOut)
-async def update_strategy(strategy_id: str, payload: StrategyUpdate, container: Container = Depends(get_container)) -> dict:
+async def update_strategy(strategy_id: str, payload: StrategyUpdate, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     try:
         return await container.strategy_service.update(strategy_id, payload.model_dump(exclude_unset=True))
@@ -49,19 +49,19 @@ async def update_strategy(strategy_id: str, payload: StrategyUpdate, container: 
 
 
 @router.delete('/{strategy_id}', response_model=BaseResponse)
-async def delete_strategy(strategy_id: str, container: Container = Depends(get_container)) -> BaseResponse:
+async def delete_strategy(strategy_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> BaseResponse:
     await _ensure_analysis_services(container)
     await container.strategy_service.delete(strategy_id)
     return BaseResponse(success=True, message='strategy deleted')
 
 
 @router.post('/{strategy_id}/activate', response_model=StrategyOut)
-async def activate_strategy(strategy_id: str, container: Container = Depends(get_container)) -> dict:
+async def activate_strategy(strategy_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     return await container.strategy_service.activate(strategy_id)
 
 
 @router.post('/{strategy_id}/deactivate', response_model=StrategyOut)
-async def deactivate_strategy(strategy_id: str, container: Container = Depends(get_container)) -> dict:
+async def deactivate_strategy(strategy_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     return await container.strategy_service.deactivate(strategy_id)

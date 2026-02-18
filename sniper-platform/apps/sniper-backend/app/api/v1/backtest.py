@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, verify_token
 from app.models.schemas.backtest import BacktestCreate
 
 router = APIRouter(prefix='/backtest', tags=['backtest'])
@@ -16,13 +16,13 @@ async def _ensure_analysis_services(container: Container) -> None:
 
 
 @router.post('/')
-async def create_backtest(payload: BacktestCreate, container: Container = Depends(get_container)) -> dict:
+async def create_backtest(payload: BacktestCreate, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     return await container.backtest_service.create_backtest(payload.model_dump())
 
 
 @router.get('/{job_id}')
-async def get_backtest_status(job_id: str, container: Container = Depends(get_container)) -> dict:
+async def get_backtest_status(job_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     try:
         return await container.backtest_service.get_status(job_id)
@@ -31,7 +31,7 @@ async def get_backtest_status(job_id: str, container: Container = Depends(get_co
 
 
 @router.get('/{job_id}/results')
-async def get_backtest_results(job_id: str, container: Container = Depends(get_container)) -> dict:
+async def get_backtest_results(job_id: str, container: Container = Depends(get_container), _: str = Depends(verify_token)) -> dict:
     await _ensure_analysis_services(container)
     try:
         return await container.backtest_service.get_results(job_id)
@@ -40,6 +40,6 @@ async def get_backtest_results(job_id: str, container: Container = Depends(get_c
 
 
 @router.get('/')
-async def list_backtests(container: Container = Depends(get_container)) -> list[dict]:
+async def list_backtests(container: Container = Depends(get_container), _: str = Depends(verify_token)) -> list[dict]:
     await _ensure_analysis_services(container)
     return await container.backtest_service.list_backtests()

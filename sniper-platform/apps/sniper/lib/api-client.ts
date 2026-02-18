@@ -66,8 +66,8 @@ api.interceptors.response.use(
       ? (error?.code === 'ECONNABORTED'
           ? (backendHealthy
               ? 'AI response timed out before completion. Please retry, or shorten the prompt/context.'
-              : 'Backend is not responding. Start backend and confirm http://localhost:8000/health returns status ok.')
-          : 'Backend unreachable. Start it with: cd sniper-backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000 — then open http://localhost:8000/health to verify.')
+              : 'Backend is not responding. Please ensure the backend service is running and reachable.')
+          : 'Unable to reach the backend. Please check your connection and ensure the backend service is available.')
       : (error?.response?.status === 504
           ? 'AI provider timed out. Please retry in a few seconds.'
           : (error?.response?.data?.detail ?? error?.message ?? 'Request failed'));
