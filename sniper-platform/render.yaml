@@ -1,0 +1,48 @@
+# Render Blueprint — Sniper Platform (Frontend + Backend)
+# Place this file at the REPO ROOT so Render picks it up automatically.
+
+services:
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  - type: web
+    runtime: node
+    name: sniper-frontend
+    rootDir: apps/sniper
+    # --include=dev ensures @types/* and build tools are installed even in
+    # production builds where NODE_ENV=production would otherwise skip them.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+  # ── Backend (FastAPI) ─────────────────────────────────────────────────────
+  - type: web
+    runtime: python
+    name: sniper-backend
+    rootDir: apps/sniper-backend
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sniper-db
+          property: connectionString
+
+databases:
+  - name: sniper-db
+    plan: free
