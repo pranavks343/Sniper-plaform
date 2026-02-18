@@ -20,7 +20,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { PositionTable } from '@/components/trading/position-table';
 import { usePositions } from '@/hooks/use-positions';
 import { useRiskMetrics } from '@/hooks/use-risk-metrics';

@@ -3,10 +3,7 @@
 import { useState } from 'react';
 
 import { QuantumStatusCard } from '@/components/quantum/quantum-status-card';
-import { Button } from '@sniper/framework';
-import { Card } from '@sniper/framework';
-import { Input } from '@sniper/framework';
-import { Switch } from '@sniper/framework';
+import { Button, Card, Input, Switch } from '@/lib/ui';
 import { useQuantumStatus } from '@/hooks/use-quantum-status';
 
 export default function QuantumPage() {

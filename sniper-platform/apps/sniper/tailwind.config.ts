@@ -6,8 +6,7 @@ const config: Config = {
     './components/**/*.{ts,tsx}',
     './hooks/**/*.{ts,tsx}',
     './lib/**/*.{ts,tsx}',
-    './store/**/*.{ts,tsx}',
-    '../../../sniper-framework/src/**/*.{ts,tsx}'
+    './store/**/*.{ts,tsx}'
   ],
   theme: {
     extend: {

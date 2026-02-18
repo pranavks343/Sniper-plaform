@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BarChart2, Edit2, Play, Square } from 'lucide-react';
 import type { Strategy } from '@/types/strategy';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 
 function StrategyCard({ strategy }: { strategy: Strategy }) {
   const active  = strategy.status === 'active';

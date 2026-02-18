@@ -20,7 +20,7 @@ import {
 
 import { TradingWorkspace } from '@/components/charts/trading-workspace';
 import { PositionTable } from '@/components/trading/position-table';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { usePositions } from '@/hooks/use-positions';
 import { useRiskMetrics } from '@/hooks/use-risk-metrics';
 import { useStrategies } from '@/hooks/use-strategies';

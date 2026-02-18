@@ -1,5 +1,5 @@
 import { AlertOctagon, CheckCircle2, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 
 export function CircuitBreakerStatus({ active, reason }: { active: boolean; reason?: string }) {
   return (

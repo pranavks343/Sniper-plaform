@@ -13,7 +13,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { apiClient } from '@/lib/api-client';
 import { useStrategies } from '@/hooks/use-strategies';
 

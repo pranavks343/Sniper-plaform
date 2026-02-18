@@ -3,8 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 
-import { Button } from '@sniper/framework';
-import { Card } from '@sniper/framework';
+import { Button, Card } from '@/lib/ui';
 import { useCopilotStore } from '@/store/copilot-store';
 
 export default function StrategyDetailPage({ params }: { params: { id: string } }) {

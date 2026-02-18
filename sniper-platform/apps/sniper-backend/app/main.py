@@ -108,9 +108,20 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allow_headers=['Authorization', 'Content-Type', 'Accept'],
 )
+
+
+@app.middleware('http')
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if settings.environment == 'production':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
 
 
 @app.middleware('http')
@@ -125,17 +136,14 @@ async def log_requests(request: Request, call_next):
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     logger.exception('unhandled error on %s', request.url.path)
-    return JSONResponse(status_code=500, content={'error': str(exc)})
+    # Never expose internal error details in production
+    detail = str(exc) if settings.environment != 'production' else 'Internal server error'
+    return JSONResponse(status_code=500, content={'error': detail})
 
 
 @app.get('/health')
 async def health() -> dict:
     return {'status': 'ok', 'service': settings.app_name}
-
-
-@app.get('/items/{item_id}')
-async def read_item(item_id: int, q: str | None = None) -> dict:
-    return {'item_id': item_id, 'q': q}
 
 
 @app.get('/favicon.ico')

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
 
 import { apiClient } from '@/lib/api-client';
-import { formatINR } from '@sniper/framework';
+import { formatINR } from '@/lib/ui';
 import type { RiskLimits, RiskMetrics } from '@/types/risk';
 
 const ORDER_TYPES = ['MARKET', 'LIMIT', 'STOP-LIMIT', 'STOP'];

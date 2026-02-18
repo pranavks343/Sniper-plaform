@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { BrainCircuit, Cpu, Layers, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { TradingCopilot } from '@/components/ai/trading-copilot';
 import { useCopilotStore } from '@/store/copilot-store';
 

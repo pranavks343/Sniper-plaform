@@ -12,7 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 type Role = 'user' | 'assistant';

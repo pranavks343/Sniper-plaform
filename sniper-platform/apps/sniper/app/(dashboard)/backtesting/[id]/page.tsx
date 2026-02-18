@@ -3,7 +3,7 @@
 import { useBacktest } from '@/hooks/use-backtest';
 
 import { EquityCurveChart } from '@/components/charts/equity-curve-chart';
-import { Card } from '@sniper/framework';
+import { Card } from '@/lib/ui';
 
 export default function BacktestResultsPage({ params }: { params: { id: string } }) {
   const { status, progress, results } = useBacktest(params.id);

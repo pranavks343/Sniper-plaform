@@ -1,6 +1,9 @@
 import asyncio
 from functools import lru_cache
 
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from app.config import Settings, get_settings
 from app.db.session import SessionLocal
 from app.services.auth_service import AuthService
@@ -94,3 +97,32 @@ class Container:
 @lru_cache
 def get_container() -> Container:
     return Container(get_settings())
+
+
+_bearer = HTTPBearer(auto_error=False)
+
+
+async def verify_token(
+    credentials: HTTPAuthorizationCredentials | None = Security(_bearer),
+) -> str:
+    """
+    Validates Bearer token from Authorization header.
+    Accepts tokens issued by the backend AuthService.
+    Returns the user email on success, raises 401 on failure.
+    """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Missing Authorization header',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    token = credentials.credentials
+    container = get_container()
+    email = container.auth_service._tokens.get(token)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid or expired token',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    return email

@@ -1,7 +1,7 @@
 'use client';
 
 import { EquityCurveChart } from '@/components/charts/equity-curve-chart';
-import { Card } from '@sniper/framework';
+import { Card } from '@/lib/ui';
 import { usePositions } from '@/hooks/use-positions';
 import { useRiskMetrics } from '@/hooks/use-risk-metrics';
 import { BarChart3, ShieldCheck, TrendingUp } from 'lucide-react';

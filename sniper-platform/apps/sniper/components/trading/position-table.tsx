@@ -4,8 +4,7 @@ import type { Position } from '@/types/trading';
 import { useMemo } from 'react';
 import { BrainCircuit } from 'lucide-react';
 
-import { formatINR } from '@sniper/framework';
-import { Badge } from '@sniper/framework';
+import { formatINR, Badge } from '@/lib/ui';
 
 export function PositionTable({ positions }: { positions: Position[] }) {
   const activePositions = useMemo(() => positions.filter((p) => p.quantity !== 0), [positions]);

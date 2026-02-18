@@ -19,7 +19,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { useUiStore } from '@/store/ui-store';
 
 if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger);

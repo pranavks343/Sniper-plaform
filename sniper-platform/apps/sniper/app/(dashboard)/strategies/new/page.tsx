@@ -19,7 +19,7 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { useStrategies } from '@/hooks/use-strategies';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */

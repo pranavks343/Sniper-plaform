@@ -1,4 +1,4 @@
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import type { QuantumStatus } from '@/types/quantum';
 
 export function QuantumStatusCard({ status }: { status: QuantumStatus | null }) {

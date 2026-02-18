@@ -1,4 +1,4 @@
-import { formatINR } from '@sniper/framework';
+import { formatINR } from '@/lib/ui';
 
 export function PerformanceSummary({
   totalPnl,

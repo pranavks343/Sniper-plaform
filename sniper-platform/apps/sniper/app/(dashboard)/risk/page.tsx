@@ -2,7 +2,7 @@
 
 import { CircuitBreakerStatus } from '@/components/risk/circuit-breaker-status';
 import { GreeksDashboard } from '@/components/risk/greeks-dashboard';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { useRiskMetrics } from '@/hooks/use-risk-metrics';
 import { AlertTriangle, BarChart2, Clock, ShieldCheck } from 'lucide-react';
 

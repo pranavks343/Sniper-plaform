@@ -5,7 +5,7 @@ import { useRef, useState, useMemo, useCallback } from 'react';
 import { GripVertical, RotateCcw, Search, X } from 'lucide-react';
 
 import { useTradingFeed } from '@/hooks/use-trading-feed';
-import { clamp } from '@sniper/framework';
+import { clamp } from '@/lib/ui';
 import type { OverlayVisibility, WorkspacePanel } from '@/types/chart';
 
 import { MultiSeriesLineChart } from './multi-series-line-chart';

@@ -14,8 +14,16 @@ class SocketChannel {
 
     this.ws = new WebSocket(this.url);
     this.ws.onmessage = (event) => {
-      const parsed = JSON.parse(event.data);
-      this.handlers.forEach((handler) => handler(parsed));
+      try {
+        const parsed = JSON.parse(event.data as string);
+        this.handlers.forEach((handler) => handler(parsed));
+      } catch {
+        // ignore malformed frames
+      }
+    };
+
+    this.ws.onerror = () => {
+      // error event always triggers onclose — reconnect handled there
     };
 
     this.ws.onclose = () => {

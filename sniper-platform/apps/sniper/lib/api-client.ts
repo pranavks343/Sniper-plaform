@@ -43,11 +43,20 @@ const api = axios.create({
   timeout: 35000,
 });
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+function isAuthRequest(url: string | undefined): boolean {
+  if (!url) return false;
+  const path = url.startsWith('http') ? new URL(url).pathname : url;
+  return path.startsWith('auth/') || path === 'auth/login' || path === 'auth/register';
+}
+
+api.interceptors.request.use(async (config) => {
+  if (typeof window === 'undefined') return config;
+  let token = localStorage.getItem('token');
+  if (!token && config.url && !isAuthRequest(config.url)) {
+    await new Promise((r) => setTimeout(r, 150));
+    token = localStorage.getItem('token');
   }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -61,6 +70,18 @@ api.interceptors.response.use(
     const baseURL = (api.defaults.baseURL ?? '') as string;
     const timeoutOnAI = error?.code === 'ECONNABORTED' && String(error?.config?.url ?? '').includes('/ai/chat');
     const backendHealthy = timeoutOnAI ? await isBackendHealthy(baseURL) : false;
+
+    const status = error?.response?.status;
+    const detail = error?.response?.data?.detail;
+    const isAuthError =
+      status === 401 ||
+      status === 403 ||
+      (typeof detail === 'string' && /missing authorization|unauthorized|invalid token/i.test(detail));
+
+    if (isAuthError && typeof window !== 'undefined') {
+      window.location.href = '/login';
+      return Promise.reject(new Error('Session expired or not signed in. Redirecting to login.'));
+    }
 
     const message = isNetworkOrTimeout
       ? (error?.code === 'ECONNABORTED'

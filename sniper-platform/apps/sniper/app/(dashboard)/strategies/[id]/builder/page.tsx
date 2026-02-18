@@ -16,7 +16,7 @@ import {
   Shield,
   Zap,
 } from 'lucide-react';
-import { Badge } from '@sniper/framework';
+import { Badge } from '@/lib/ui';
 import { useCopilotStore } from '@/store/copilot-store';
 
 /* ─── Node palette data ───────────────────────────────────────────────────── */

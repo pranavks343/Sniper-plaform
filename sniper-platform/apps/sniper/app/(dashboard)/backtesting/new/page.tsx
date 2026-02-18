@@ -5,10 +5,7 @@ import { useState } from 'react';
 
 import { apiClient } from '@/lib/api-client';
 
-import { Button } from '@sniper/framework';
-import { Card } from '@sniper/framework';
-import { Input } from '@sniper/framework';
-import { Select } from '@sniper/framework';
+import { Button, Card, Input, Select } from '@/lib/ui';
 
 export default function NewBacktestPage() {
   const [strategyId, setStrategyId] = useState('strategy-1');

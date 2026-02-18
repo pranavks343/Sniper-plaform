@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { calculateEma, calculateVwap, toLineSeries } from '@sniper/framework';
+import { calculateEma, calculateVwap, toLineSeries } from '@/lib/ui';
 import { websocketClient } from '@/lib/websocket-client';
 import type { CandlePoint, LinePoint, OrderBook, TickPoint, TimeSalesEntry } from '@/types/chart';
 

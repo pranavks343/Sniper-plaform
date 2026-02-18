@@ -15,7 +15,7 @@ import {
   UserCircle,
   Zap,
 } from 'lucide-react';
-import { cn } from '@sniper/framework';
+import { cn } from '@/lib/ui';
 import { useUiStore } from '@/store/ui-store';
 import { useCopilotStore } from '@/store/copilot-store';
 
