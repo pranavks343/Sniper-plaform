@@ -21,6 +21,7 @@ from app.api.v1.websocket import router as websocket_router
 from app.config import get_settings
 from app.db.session import init_db
 from app.dependencies import get_container
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.utils.logger import configure_logging, get_logger
 
 settings = get_settings()
@@ -111,6 +112,7 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.middleware('http')
@@ -124,8 +126,11 @@ async def log_requests(request: Request, call_next):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    logger.exception('unhandled error on %s', request.url.path)
-    return JSONResponse(status_code=500, content={'error': str(exc)})
+    logger.exception('unhandled error on %s', request.url.path, exc_info=exc)
+    # Do not leak internal details to client in production
+    if get_settings().environment == 'dev':
+        return JSONResponse(status_code=500, content={'error': str(exc)})
+    return JSONResponse(status_code=500, content={'error': 'Internal server error'})
 
 
 @app.get('/health')

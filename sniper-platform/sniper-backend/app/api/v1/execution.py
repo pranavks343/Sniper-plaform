@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 from app.models.schemas.execution import OrderOut, PlaceOrderRequest, PositionOut, TradeOut
 
-router = APIRouter(prefix='/execution', tags=['execution'])
+router = APIRouter(prefix='/execution', tags=['execution'], dependencies=[Depends(get_current_user)])
 
 
 @router.post('/order', response_model=OrderOut)

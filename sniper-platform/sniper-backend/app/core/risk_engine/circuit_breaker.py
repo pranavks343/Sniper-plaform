@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -13,8 +14,9 @@ class BreakerStatus:
 
 
 class CircuitBreaker:
-    def __init__(self) -> None:
+    def __init__(self, admin_secret: str = '') -> None:
         self._status = BreakerStatus(active=False, reason=None, timestamp=None, actions_taken=[])
+        self._admin_secret = admin_secret or ''
 
     def check_triggers(self, market_state: dict, portfolio_state: dict) -> bool:
         if abs(portfolio_state.get('daily_loss_pct', 0.0)) > portfolio_state.get('max_daily_loss_pct', 0.02):
@@ -37,8 +39,12 @@ class CircuitBreaker:
         )
 
     def deactivate_breaker(self, admin_password: str) -> None:
+        if not self._admin_secret:
+            raise ValueError('circuit breaker admin secret not configured; set CIRCUIT_BREAKER_ADMIN_SECRET')
         if not admin_password:
             raise ValueError('admin password required')
+        if not hmac.compare_digest(self._admin_secret, admin_password):
+            raise ValueError('invalid admin password')
         self._status = BreakerStatus(active=False, reason=None, timestamp=datetime.utcnow(), actions_taken=['resume_trading'])
 
     def emergency_position_close(self) -> list[dict]:

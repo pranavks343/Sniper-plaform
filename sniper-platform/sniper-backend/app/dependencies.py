@@ -1,5 +1,8 @@
 import asyncio
 from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends, Header, HTTPException
 
 from app.config import Settings, get_settings
 from app.db.session import SessionLocal
@@ -9,11 +12,39 @@ from app.services.execution_service import ExecutionService
 from app.services.quantum_service import QuantumService
 from app.services.risk_service import RiskService
 from app.services.strategy_service import StrategyService
+from app.utils.clerk_jwt import clerk_payload_to_user, verify_clerk_token
 from app.utils.convex_bus import ConvexBus
 from app.utils.encryption import DataEncryptor, EncryptionError
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def get_current_user(
+    authorization: Annotated[str | None, Header(alias='Authorization')] = None,
+    container: 'Container' = Depends(get_container),
+) -> dict:
+    """
+    Validate Bearer token and return current user; raise 401 if missing or invalid.
+    Accepts either: (1) backend token from POST /auth/login, or (2) Clerk JWT if CLERK_JWKS_URL is set.
+    """
+    if not authorization or not authorization.startswith('Bearer '):
+        raise HTTPException(status_code=401, detail='Missing or invalid authorization header')
+    token = authorization[7:].strip()
+
+    # 1) Try backend session token
+    user = container.auth_service.get_user_for_token(token)
+    if user:
+        return {'user_id': user[0], 'email': user[1]}
+
+    # 2) Try Clerk JWT
+    jwks_url = (container.settings.clerk_jwks_url or '').strip()
+    if jwks_url:
+        payload = verify_clerk_token(token, jwks_url)
+        if payload:
+            return clerk_payload_to_user(payload)
+
+    raise HTTPException(status_code=401, detail='Invalid or expired token')
 
 
 class Container:

@@ -9,7 +9,14 @@ from app.models.database.namespaces import ALL_SCHEMAS
 
 settings = get_settings()
 
-engine = create_async_engine(settings.database_url, pool_pre_ping=True, future=True)
+engine = create_async_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_size=settings.database_pool_size,
+    max_overflow=settings.database_max_overflow,
+    pool_recycle=settings.database_pool_recycle_seconds,
+    future=True,
+)
 SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 

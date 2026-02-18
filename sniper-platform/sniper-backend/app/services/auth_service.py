@@ -15,10 +15,12 @@ from app.models.database.user import User, UserPreference
 
 
 class AuthService:
+    """Stores token -> (user_id, email) for validation; tokens are in-memory (lost on restart)."""
+
     def __init__(self, settings: Settings, session_factory: async_sessionmaker) -> None:
         self.settings = settings
         self.session_factory = session_factory
-        self._tokens: dict[str, str] = {}
+        self._tokens: dict[str, tuple[str, str]] = {}  # token -> (user_id, email)
 
     def _normalize_email(self, email: str) -> str:
         return email.strip().lower()
@@ -69,7 +71,7 @@ class AuthService:
             await session.commit()
 
         token = secrets.token_urlsafe(32)
-        self._tokens[token] = normalized_email
+        self._tokens[token] = (user_id, normalized_email)
         return {
             'token': token,
             'user': {
@@ -78,6 +80,10 @@ class AuthService:
                 'created_at': created_at,
             },
         }
+
+    def get_user_for_token(self, token: str) -> tuple[str, str] | None:
+        """Return (user_id, email) if token is valid, else None."""
+        return self._tokens.get(token) if token else None
 
     async def login(self, email: str, password: str) -> dict:
         normalized_email = self._normalize_email(email)
@@ -105,7 +111,7 @@ class AuthService:
             await session.commit()
 
         token = secrets.token_urlsafe(32)
-        self._tokens[token] = normalized_email
+        self._tokens[token] = (user.id, normalized_email)
         return {
             'token': token,
             'user': {

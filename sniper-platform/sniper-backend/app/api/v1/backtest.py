@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 from app.models.schemas.backtest import BacktestCreate
 
-router = APIRouter(prefix='/backtest', tags=['backtest'])
+router = APIRouter(prefix='/backtest', tags=['backtest'], dependencies=[Depends(get_current_user)])
 
 
 async def _ensure_analysis_services(container: Container) -> None:

@@ -37,17 +37,26 @@ echo ""
 echo "${BLUE}🔧 Starting FastAPI backend...${NC}"
 cd "$BACKEND_DIR"
 
+# Prefer Python 3.12 (or 3.11) to avoid 3.14 build failures for pydantic-core/greenlet
+if command -v python3.12 &>/dev/null; then
+    PYTHON=python3.12
+elif command -v python3.11 &>/dev/null; then
+    PYTHON=python3.11
+else
+    PYTHON=python3
+fi
+
 # Create venv if needed
 if [ ! -d ".venv" ]; then
-    echo "   Creating Python virtual environment..."
-    python3 -m venv .venv
+    echo "   Creating Python virtual environment ($PYTHON)..."
+    $PYTHON -m venv .venv
 fi
 
 # Activate venv
 source .venv/bin/activate
 
 # Install requirements if needed
-if ! python3 -c "import fastapi" 2>/dev/null; then
+if ! python -c "import fastapi" 2>/dev/null; then
     echo "   Installing Python dependencies..."
     pip install -r requirements.txt > /dev/null 2>&1
 fi

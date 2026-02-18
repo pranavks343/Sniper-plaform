@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 from app.models.schemas.common import BaseResponse, Regime
 from app.models.schemas.strategy import StrategyCreate, StrategyOut, StrategyUpdate
 
-router = APIRouter(prefix='/strategy', tags=['strategy'])
+router = APIRouter(prefix='/strategy', tags=['strategy'], dependencies=[Depends(get_current_user)])
 
 
 async def _ensure_analysis_services(container: Container) -> None:

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 from app.models.schemas.risk import CircuitBreakerDeactivateRequest, CircuitBreakerRequest, RiskLimits
 
-router = APIRouter(prefix='/risk', tags=['risk'])
+router = APIRouter(prefix='/risk', tags=['risk'], dependencies=[Depends(get_current_user)])
 
 
 @router.get('/metrics')
@@ -40,4 +40,7 @@ async def activate_breaker(payload: CircuitBreakerRequest, container: Container 
 
 @router.post('/circuit-breaker/deactivate')
 async def deactivate_breaker(payload: CircuitBreakerDeactivateRequest, container: Container = Depends(get_container)) -> dict:
-    return await container.risk_service.deactivate_circuit_breaker(payload.admin_password)
+    try:
+        return await container.risk_service.deactivate_circuit_breaker(payload.admin_password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -19,10 +20,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix='/ai', tags=['ai'])
+router = APIRouter(prefix='/ai', tags=['ai'], dependencies=[Depends(get_current_user)])
 
 # ── Request / response schemas ────────────────────────────────────────────────
 
@@ -294,6 +295,13 @@ async def ai_chat(
     api_key: str = getattr(settings, "openai_api_key", "") or ""
     model: str = getattr(settings, "openai_model", "gpt-4o-mini") or "gpt-4o-mini"
     if not api_key:
+        # #region agent log
+        try:
+            with open("/Users/pranavks/project/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"message": "ai_chat_503_openai_key_missing", "data": {"openai_api_key_set": False, "cwd": os.getcwd()}, "timestamp": __import__("time").time()}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         raise HTTPException(
             status_code=503,
             detail="AI Copilot is not configured. Set OPENAI_API_KEY in sniper-backend/.env",

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import Container, get_container
+from app.dependencies import Container, get_container, get_current_user
 from app.models.schemas.quantum import QuantumConfigUpdate, QuantumConnectPayload
 
-router = APIRouter(prefix='/quantum', tags=['quantum'])
+router = APIRouter(prefix='/quantum', tags=['quantum'], dependencies=[Depends(get_current_user)])
 
 
 @router.get('/status')

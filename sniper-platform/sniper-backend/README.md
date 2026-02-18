@@ -2,11 +2,16 @@
 
 FastAPI backend implementing strategy, execution, risk, backtesting, and quantum control endpoints.
 
+## Python version
+
+Use **Python 3.11 or 3.12**. Python 3.13/3.14 are not yet supported by pydantic-core (build will fail). If you only have 3.14, install 3.12 (e.g. `brew install python@3.12`) and use it for the venv.
+
 ## Quick start
 
 ```bash
 cp .env.example .env
-python -m venv .venv
+# Use Python 3.12 or 3.11 for the venv (see above)
+python3.12 -m venv .venv   # or: python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/train_models.py
@@ -14,10 +19,16 @@ python scripts/generate_sample_data.py
 uvicorn app.main:app --reload --port 8000
 ```
 
+Or run `./start-backend.sh` (it picks 3.12/3.11 if available).
+
 ## Database migrations (Alembic)
 
 ```bash
+# With venv activated:
 alembic upgrade head
+
+# Or use the script (creates/uses .venv with a compatible Python):
+bash scripts/run-alembic.sh upgrade head
 ```
 
 Schema namespaces used by this backend:

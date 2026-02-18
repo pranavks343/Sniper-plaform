@@ -9,12 +9,14 @@ cd "$SCRIPT_DIR"
 echo "Starting backend at http://localhost:8000 ..."
 echo ""
 
-# Use Python 3.12 if available (avoids 3.14 build issues), else default python3
-if command -v python3.12 &>/dev/null; then
-    PYTHON=python3.12
-else
-    PYTHON=python3
-fi
+# Use Python 3.12 or 3.11 (pydantic-core has no wheels for 3.13/3.14)
+for py in python3.12 python3.11; do
+    if command -v "$py" &>/dev/null; then
+        PYTHON="$py"
+        break
+    fi
+done
+PYTHON="${PYTHON:-python3}"
 
 # Create venv with correct Python if missing
 if [ ! -d ".venv" ]; then

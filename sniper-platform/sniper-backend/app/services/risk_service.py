@@ -29,7 +29,7 @@ class RiskService:
         self.event_bus = event_bus
         self.session_factory = session_factory
         self.greeks_calculator = GreeksCalculator()
-        self.circuit_breaker = CircuitBreaker()
+        self.circuit_breaker = CircuitBreaker(admin_secret=settings.circuit_breaker_admin_secret)
         self.hedge_optimizer = HedgeOptimizerQuantum()
         self.limit_monitor = LimitMonitor(
             {
