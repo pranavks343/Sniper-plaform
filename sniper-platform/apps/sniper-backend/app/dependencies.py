@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from functools import lru_cache
 
+import httpx
+import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -17,6 +22,42 @@ from app.utils.encryption import DataEncryptor, EncryptionError
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# ── Clerk JWKS client (lazy-init) ────────────────────────────────────────────
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient | None:
+    """Return a cached PyJWKClient for Clerk JWT verification."""
+    global _jwks_client
+    if _jwks_client is not None:
+        return _jwks_client
+    settings = get_settings()
+    jwks_url = (settings.clerk_jwks_url or '').strip()
+    if not jwks_url:
+        return None
+    _jwks_client = PyJWKClient(jwks_url, cache_keys=True)
+    return _jwks_client
+
+
+def _verify_clerk_jwt(token: str) -> str | None:
+    """Verify a Clerk-issued JWT. Returns user ID / subject on success, None on failure."""
+    client = _get_jwks_client()
+    if client is None:
+        return None
+    try:
+        signing_key = client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=['RS256'],
+            options={'verify_aud': False},
+        )
+        # Clerk puts user ID in 'sub', email may be in the payload too
+        return payload.get('sub') or payload.get('email') or 'clerk_user'
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, Exception) as exc:
+        logger.debug('Clerk JWT verification failed: %s', exc)
+        return None
 
 
 class Container:
@@ -107,8 +148,12 @@ async def verify_token(
 ) -> str:
     """
     Validates Bearer token from Authorization header.
-    Accepts tokens issued by the backend AuthService.
-    Returns the user email on success, raises 401 on failure.
+
+    Checks in order:
+      1. Clerk JWT (if CLERK_JWKS_URL is configured)
+      2. Backend-issued internal token (AuthService._tokens)
+
+    Returns user identifier on success, raises 401 on failure.
     """
     if credentials is None:
         raise HTTPException(
@@ -117,12 +162,20 @@ async def verify_token(
             headers={'WWW-Authenticate': 'Bearer'},
         )
     token = credentials.credentials
+
+    # 1. Try Clerk JWT verification
+    clerk_user = _verify_clerk_jwt(token)
+    if clerk_user:
+        return clerk_user
+
+    # 2. Fall back to backend-issued token
     container = get_container()
     email = container.auth_service._tokens.get(token)
-    if not email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Invalid or expired token',
-            headers={'WWW-Authenticate': 'Bearer'},
-        )
-    return email
+    if email:
+        return email
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Invalid or expired token',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
