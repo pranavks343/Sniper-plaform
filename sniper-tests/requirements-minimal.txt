@@ -1,0 +1,19 @@
+# Minimal requirements for Python 3.14 compatibility
+# Install these first, then try the full requirements.txt
+
+# Essential testing framework
+pytest
+pytest-asyncio
+pytest-cov
+
+# Core scientific computing (latest versions for Python 3.14)
+numpy
+pandas
+scipy
+
+# Machine learning
+scikit-learn
+joblib
+
+# Utilities
+faker
