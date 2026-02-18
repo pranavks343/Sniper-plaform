@@ -21,9 +21,20 @@ class Settings(BaseSettings):
             return ['http://localhost:3000']
         if isinstance(v, list):
             return v
-        # Accept comma-separated string: http://a.com,http://b.com
-        if isinstance(v, str) and not v.strip().startswith('['):
-            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return ['http://localhost:3000']
+            # Accept JSON array: ["http://a.com","http://b.com"]
+            if s.startswith('['):
+                import json
+                try:
+                    parsed = json.loads(s)
+                    return parsed if parsed else ['http://localhost:3000']
+                except json.JSONDecodeError:
+                    pass
+            # Accept comma-separated: http://a.com,http://b.com
+            return [origin.strip() for origin in s.split(',') if origin.strip()]
         return v
 
     @field_validator('database_url', mode='before')
