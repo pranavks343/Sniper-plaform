@@ -16,3 +16,5 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: ALLOWED_ORIGINS
+        value: "https://sniper-platform.onrender.com,http://localhost:3000"

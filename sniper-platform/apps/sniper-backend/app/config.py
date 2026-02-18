@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import List
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     api_prefix: str = '/api/v1'
     environment: str = 'dev'
     allowed_origins: List[str] = Field(default_factory=lambda: ['http://localhost:3000'])
+
+    @field_validator('allowed_origins', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if not v:
+            return ['http://localhost:3000']
+        if isinstance(v, list):
+            return v
+        # Accept comma-separated string: http://a.com,http://b.com
+        if isinstance(v, str) and not v.strip().startswith('['):
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
 
     database_url: str = 'postgresql+asyncpg://postgres:postgres@localhost:5432/sniper'
     default_user_id: str = '00000000-0000-0000-0000-000000000001'
