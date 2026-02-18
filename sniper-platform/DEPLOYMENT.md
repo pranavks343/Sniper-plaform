@@ -4,7 +4,7 @@
 
 Sniper is a monorepo containing:
 - **Frontend** (`apps/sniper`): Next.js 14 + React + TypeScript + Tailwind
-- **Backend** (`apps/sniper-backend`): FastAPI + Python 3.11 + PostgreSQL + Redis
+- **Backend** (`sniper-backend`): FastAPI + Python 3.11 + PostgreSQL + Redis
 - **Framework** (`/sniper-framework` external): Python ML/trading components
 
 **Status**: ✅ **Production Ready** (All security fixes applied)
@@ -59,22 +59,25 @@ docker-compose up -d
 6. Note frontend URL: `https://sniper-frontend.onrender.com`
 
 #### C. Deploy Backend (FastAPI)
-1. **Create new Web Service** → Select repo again
-2. **Build Command**: `cd apps/sniper-backend && pip install -r requirements.txt`
-3. **Start Command**: `cd apps/sniper-backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000`
-4. **Environment Variables** (copy from `.env.example`):
+1. **Create new Web Service** → Select repo again  
+2. **Root Directory**: `sniper-backend` (required — backend lives at repo root, not under `apps/`)
+3. **Build Command**: `pip install --no-cache-dir -r requirements.txt`
+4. **Start Command**: `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`  
+   Or use **Pre-Deploy Command**: `alembic upgrade head` and **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. **Environment Variables** (copy from `sniper-backend/.env.example`):
    ```
    ENVIRONMENT=production
    DATABASE_URL=postgresql://user:password@render-postgres-host:5432/sniper
    ALLOWED_ORIGINS=["https://sniper-frontend.onrender.com"]
    CLERK_JWKS_URL=https://your-instance.clerk.accounts.dev/.well-known/jwks.json
    OPENAI_API_KEY=sk-...
-   # ... other keys (see .env.example)
+   # ... other keys (see sniper-backend/.env.example)
    ```
-5. **Attach PostgreSQL Database**:
+6. **Attach PostgreSQL Database**:
    - In Render dashboard → "PostgreSQL" → Create new
    - Auto-fills `DATABASE_URL` in environment
-6. **Deploy** (takes ~8 mins)
+7. **Deploy** (takes ~8 mins).  
+   **Tip**: You can use the repo’s `render.yaml` blueprint so Root Directory and build/start commands are set automatically.
 
 #### D. Set Up Redis (optional but recommended)
 1. Create **Redis** service on Render
@@ -224,7 +227,7 @@ docker push your-registry/sniper-frontend:latest
 
 ### Build Backend Image
 ```bash
-cd apps/sniper-backend
+cd sniper-backend
 docker build -t sniper-backend:latest .
 docker push your-registry/sniper-backend:latest
 ```
@@ -296,6 +299,15 @@ docker-compose up -d
 
 ## 🚨 Troubleshooting
 
+### Backend build failed — "Exited with status 1 while building your code"
+- **Wrong root directory**: Render must build from the backend folder. Set **Root Directory** to `sniper-backend` (not `apps/sniper-backend`). The canonical backend with Clerk auth and all features is in `sniper-backend/` at the repo root.
+- **Use the blueprint**: Connect the repo using the **Blueprint** (Infrastructure as Code) and select the repo’s `render.yaml` so Root Directory, build, and start commands are correct.
+- **Build command**: Use `pip install --no-cache-dir -r requirements.txt` (no `cd` needed if Root Directory is `sniper-backend`).
+- **Out of memory during `pip install`**: The backend has heavy deps (numpy, scipy, xgboost, qiskit). If the build is killed during install:
+  - In Render Dashboard → your backend service → **Settings** → increase instance type (e.g. **Starter** or **Standard**) so the build has more RAM.
+  - Or in **Workspace Settings** → **Build Pipeline** → switch to a higher tier if available (e.g. Performance for more build memory).
+- **Python version**: Backend expects Python 3.11. Either set **Environment** → `PYTHON_VERSION` = `3.11.9`, or rely on `sniper-backend/.python-version` (already set to 3.11.9).
+
 ### Frontend can't reach backend
 ```
 Error: "Backend unreachable"
@@ -314,7 +326,7 @@ Error: "WebSocket connection refused"
 Solution: Ensure backend is running; check NEXT_PUBLIC_WS_URL matches backend
 ```
 
-### Out of memory on Render
+### Out of memory on Render (at runtime)
 ```
 Error: "Killed: 9" in logs
 Solution: Upgrade to paid tier (currently on free tier with 512MB RAM)
