@@ -1,8 +1,37 @@
-# Render Blueprint — Sniper Backend (FastAPI)
-# Place this file at the REPO ROOT so Render picks it up automatically.
-# rootDir is relative to the repo root.
+# Render Blueprint — Sniper Platform (Frontend + Backend)
+# Repo root is the git root; all rootDir paths are relative to it.
 
 services:
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  - type: web
+    runtime: node
+    name: sniper-frontend
+    rootDir: sniper-platform/apps/sniper
+    # --include=dev installs build-time packages (@types/*, typescript, tailwind…)
+    # even though Render sets NODE_ENV=production.
+    # After next build, copy static assets into the standalone bundle so the
+    # standalone server can serve them.
+    buildCommand: >-
+      npm install --include=dev &&
+      npm run build &&
+      cp -r .next/static .next/standalone/.next/static &&
+      cp -r public .next/standalone/public
+    # Standalone mode: run the self-contained server, NOT `next start`.
+    startCommand: node .next/standalone/server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+  # ── Backend (FastAPI) ─────────────────────────────────────────────────────
   - type: web
     runtime: python
     name: sniper-backend
@@ -17,11 +46,12 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: ALLOWED_ORIGINS
-        value: "https://sniper-platform.onrender.com,http://localhost:3000"
+        value: "https://sniper-frontend-ynz3.onrender.com,http://localhost:3000"
       - key: DATABASE_URL
         fromDatabase:
           name: sniper-db
           property: connectionString
+
 databases:
   - name: sniper-db
     plan: free
