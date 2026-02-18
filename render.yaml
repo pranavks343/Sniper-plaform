@@ -6,7 +6,7 @@ services:
   - type: web
     runtime: python
     name: sniper-backend
-    rootDir: sniper-platform/sniper-backend
+    rootDir: sniper-platform/apps/sniper-backend
     buildCommand: pip install --no-cache-dir -r requirements.txt
     preDeployCommand: alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
