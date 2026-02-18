@@ -1,12 +1,12 @@
-# Render Blueprint — Sniper backend (FastAPI)
-# Use this when connecting the repo to Render so the backend builds from the correct directory.
-# See DEPLOYMENT.md for full setup and env vars.
+# Render Blueprint — Sniper Backend (FastAPI)
+# Place this file at the REPO ROOT so Render picks it up automatically.
+# rootDir is relative to the repo root.
 
 services:
   - type: web
     runtime: python
     name: sniper-backend
-    rootDir: sniper-backend
+    rootDir: sniper-platform/sniper-backend
     buildCommand: pip install --no-cache-dir -r requirements.txt
     preDeployCommand: alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
