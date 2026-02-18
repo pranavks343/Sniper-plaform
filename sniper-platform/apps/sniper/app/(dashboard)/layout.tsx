@@ -1,6 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
 
-import { CopilotBubble } from '@/components/ai/copilot-bubble';
 import { TradingViewPreload } from '@/components/charts/tradingview-preload';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -26,9 +25,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </main>
       </div>
-
-      {/* Floating AI Copilot bubble — client component, renders on all dashboard pages */}
-      <CopilotBubble />
     </div>
   );
 }

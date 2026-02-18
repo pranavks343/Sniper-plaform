@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/ui';
 import { useUiStore } from '@/store/ui-store';
-import { useCopilotStore } from '@/store/copilot-store';
 
 /* ─── Nav structure ───────────────────────────────────────────────────────── */
 type NavSection = 'algo' | 'monitor' | 'account';
@@ -59,7 +58,6 @@ function isItemActive(pathname: string | null, href: string): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, toggleSidebar } = useUiStore();
-  const { toggleCopilot, copilotOpen } = useCopilotStore();
 
   const sections = (['algo', 'monitor', 'account'] as const).map((s) => ({
     id: s,
@@ -141,22 +139,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* AI Copilot + Algo engine status */}
+      {/* Algo engine status */}
       <div className={cn('mb-2 flex flex-col gap-2', sidebarOpen ? 'items-stretch px-2' : 'items-center')}>
         <div className={cn('tv-divider', sidebarOpen ? 'w-full' : 'w-8')} />
-        {/* AI Copilot toggle button */}
-        <button
-          type="button"
-          onClick={toggleCopilot}
-          className={cn('tv-sidebar-item', copilotOpen && 'active')}
-          aria-label="AI Trading Copilot"
-          title="AI Trading Copilot"
-          style={copilotOpen ? { borderColor: 'rgba(38,166,154,0.4)', background: 'rgba(38,166,154,0.12)' } : undefined}
-        >
-          <Bot size={18} strokeWidth={copilotOpen ? 2.25 : 1.9} style={{ color: copilotOpen ? '#26a69a' : undefined }} />
-          <span className="tv-sidebar-label" style={{ color: copilotOpen ? '#26a69a' : undefined }}>AI Copilot</span>
-          {!sidebarOpen && <span className="tv-sidebar-tooltip">AI Trading Copilot</span>}
-        </button>
         {/* Algo engine status */}
         <div
           className="tv-sidebar-item"
