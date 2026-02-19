@@ -3,19 +3,12 @@
 
 services:
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
-  # rootDir intentionally left unset (defaults to repo root) so that
-  # `bun install` resolves the full monorepo workspace tree.  This ensures
-  # hoisted node_modules are present for Next.js standalone file tracing,
-  # which fixes the "clientModules undefined" runtime error.
+  # No standalone output — avoids Next.js 14.2.x route-group clientModules bug.
   - type: web
     runtime: node
     name: sniper-frontend
-    buildCommand: >
-      bun install &&
-      bun run --filter @sniper/app build &&
-      cp -r apps/sniper/.next/static apps/sniper/.next/standalone/apps/sniper/.next/static &&
-      cp -r apps/sniper/public apps/sniper/.next/standalone/apps/sniper/public
-    startCommand: HOSTNAME=0.0.0.0 node apps/sniper/.next/standalone/apps/sniper/server.js
+    buildCommand: bun install && bun run --filter @sniper/app build
+    startCommand: HOSTNAME=0.0.0.0 bun run --filter @sniper/app start
     healthCheckPath: /
     envVars:
       - key: BUN_INSTALL_CACHE_DIR
