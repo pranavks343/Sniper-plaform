@@ -3,18 +3,23 @@
 
 services:
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  # rootDir intentionally left unset (defaults to repo root) so that
+  # `bun install` resolves the full monorepo workspace tree.  This ensures
+  # hoisted node_modules are present for Next.js standalone file tracing,
+  # which fixes the "clientModules undefined" runtime error.
   - type: web
     runtime: node
     name: sniper-frontend
-    rootDir: apps/sniper
-    # --include=dev ensures @types/* and build tools are installed even in
-    # production builds where NODE_ENV=production would otherwise skip them.
-    buildCommand: npm install --include=dev && npm run build && cp -r .next/static .next/standalone/apps/sniper/.next/static && cp -r public .next/standalone/apps/sniper/public
-    startCommand: HOSTNAME=0.0.0.0 node .next/standalone/apps/sniper/server.js
+    buildCommand: >
+      bun install &&
+      bun run build --workspace=apps/sniper &&
+      cp -r apps/sniper/.next/static apps/sniper/.next/standalone/apps/sniper/.next/static &&
+      cp -r apps/sniper/public apps/sniper/.next/standalone/apps/sniper/public
+    startCommand: HOSTNAME=0.0.0.0 node apps/sniper/.next/standalone/apps/sniper/server.js
     healthCheckPath: /
     envVars:
-      - key: NODE_VERSION
-        value: "20"
+      - key: BUN_INSTALL_CACHE_DIR
+        value: /tmp/bun-cache
       - key: NEXT_PUBLIC_API_BASE_URL
         sync: false
       - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
