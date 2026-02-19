@@ -10,13 +10,6 @@ const isPublicRoute = createRouteMatcher([
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
-  '/analytics(.*)',
-  '/backtesting(.*)',
-  '/live-trading(.*)',
-  '/paper-trading(.*)',
-  '/quantum(.*)',
-  '/risk(.*)',
-  '/strategies(.*)'
 ]);
 
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;

@@ -4,13 +4,6 @@ import type { NextRequest } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
-  '/analytics(.*)',
-  '/backtesting(.*)',
-  '/live-trading(.*)',
-  '/paper-trading(.*)',
-  '/quantum(.*)',
-  '/risk(.*)',
-  '/strategies(.*)'
 ]);
 
 const isPublicRoute = createRouteMatcher([

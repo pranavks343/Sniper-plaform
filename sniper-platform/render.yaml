@@ -3,7 +3,7 @@
 
 services:
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
-  # No standalone output — avoids Next.js 14.2.x route-group clientModules bug.
+  # Dashboard routes live under app/dashboard/ (not a route group) to avoid Next.js 14.2.x clientModules bug.
   - type: web
     runtime: node
     name: sniper-frontend
