@@ -26,7 +26,27 @@ export default async function RegisterPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4 py-8">
-      <SignUp routing="path" path="/register" signInUrl="/login" fallbackRedirectUrl="/dashboard" />
+      <div className="w-full">
+        <SignUp
+          routing="path"
+          path="/register"
+          signInUrl="/login"
+          fallbackRedirectUrl="/dashboard"
+          appearance={{
+            elements: {
+              rootBox: 'mx-auto',
+              card: 'shadow-none',
+            },
+          }}
+        />
+        <noscript>
+          <div className="rounded-xl p-8 text-center" style={{ background: 'var(--tv-bg-surface)', border: '1px solid var(--tv-border)' }}>
+            <p className="text-sm" style={{ color: 'var(--tv-text-secondary)' }}>
+              JavaScript is required to sign up.
+            </p>
+          </div>
+        </noscript>
+      </div>
     </main>
   );
 }
