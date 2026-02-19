@@ -9,8 +9,8 @@ services:
     rootDir: apps/sniper
     # --include=dev ensures @types/* and build tools are installed even in
     # production builds where NODE_ENV=production would otherwise skip them.
-    buildCommand: npm install --include=dev && npm run build
-    startCommand: npm start
+    buildCommand: npm install --include=dev && npm run build && cp -r .next/static .next/standalone/apps/sniper/.next/static && cp -r public .next/standalone/apps/sniper/public
+    startCommand: HOSTNAME=0.0.0.0 node .next/standalone/apps/sniper/server.js
     healthCheckPath: /
     envVars:
       - key: NODE_VERSION

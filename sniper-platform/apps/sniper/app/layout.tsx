@@ -21,10 +21,6 @@ const themeScript = `
 })();
 `;
 
-// #region agent log
-console.log('[DEBUG][H1] RootLayout server render reached', {env:process.env.NODE_ENV, port:process.env.PORT});
-// #endregion
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
