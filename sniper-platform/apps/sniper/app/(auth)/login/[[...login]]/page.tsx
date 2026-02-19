@@ -1,9 +1,7 @@
 import { SignIn } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 
-const isClerkConfigured =
-  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_');
+const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default async function LoginPage() {
   if (isClerkConfigured) {

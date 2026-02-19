@@ -6,9 +6,7 @@ export const metadata: Metadata = {
   title: 'Home Page'
 };
 
-const isClerkConfigured =
-  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_');
+const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default async function RootPage() {
   if (isClerkConfigured) {
