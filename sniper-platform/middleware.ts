@@ -1,18 +1,43 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Only these routes are accessible without signing in.
-// Everything else is protected by default.
 const isPublicRoute = createRouteMatcher([
   '/',
   '/login(.*)',
   '/register(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/analytics(.*)',
+  '/backtesting(.*)',
+  '/live-trading(.*)',
+  '/paper-trading(.*)',
+  '/quantum(.*)',
+  '/risk(.*)',
+  '/strategies(.*)'
+]);
+
+const isClerkConfigured =
+  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_');
+
+function devFallbackMiddleware(req: NextRequest) {
+  if (isProtectedRoute(req)) {
+    const loginUrl = new URL('/login', req.url);
+    return NextResponse.redirect(loginUrl);
   }
-});
+  return NextResponse.next();
+}
+
+export default isClerkConfigured
+  ? clerkMiddleware(async (auth, req) => {
+      if (!isPublicRoute(req)) {
+        await auth.protect();
+      }
+    })
+  : devFallbackMiddleware;
 
 export const config = {
   matcher: [

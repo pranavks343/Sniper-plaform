@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: 'Quantum-enhanced algorithmic trading platform'
 };
 
-// Injected before React hydrates — reads localStorage and sets class on <html>
-// to avoid flash of wrong theme.
 const themeScript = `
 (function(){
   try {
@@ -21,24 +19,30 @@ const themeScript = `
 })();
 `;
 
+const isClerkConfigured =
+  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_');
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
-      {/* suppressHydrationWarning because we mutate className client-side */}
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          {/* Run synchronously before page renders to prevent theme flash */}
-          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        </head>
-        <body
-          className="antialiased"
-          style={{ background: 'var(--tv-bg-base)', color: 'var(--tv-text-primary)' }}
-          suppressHydrationWarning
-        >
-          <ClerkTokenSync />
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+  const shell = (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body
+        className="antialiased"
+        style={{ background: 'var(--tv-bg-base)', color: 'var(--tv-text-primary)' }}
+        suppressHydrationWarning
+      >
+        {isClerkConfigured && <ClerkTokenSync />}
+        {children}
+      </body>
+    </html>
   );
+
+  if (isClerkConfigured) {
+    return <ClerkProvider>{shell}</ClerkProvider>;
+  }
+
+  return shell;
 }
