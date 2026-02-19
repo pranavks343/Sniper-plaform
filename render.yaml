@@ -11,13 +11,15 @@ services:
     # even though Render sets NODE_ENV=production.
     # After next build, copy static assets into the standalone bundle so the
     # standalone server can serve them.
+    # outputFileTracingRoot=sniper-platform/ means standalone output is structured
+    # relative to that root, so server.js lives at standalone/apps/sniper/server.js
+    # and static assets must be copied there too.
     buildCommand: >-
       npm install --include=dev &&
       npm run build &&
-      cp -r .next/static .next/standalone/.next/static &&
-      cp -r public .next/standalone/public
-    # Standalone mode: run the self-contained server, NOT `next start`.
-    startCommand: node .next/standalone/server.js
+      cp -r .next/static .next/standalone/apps/sniper/.next/static &&
+      cp -r public .next/standalone/apps/sniper/public
+    startCommand: node .next/standalone/apps/sniper/server.js
     healthCheckPath: /
     envVars:
       - key: NODE_VERSION
