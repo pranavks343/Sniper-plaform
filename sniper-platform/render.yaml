@@ -12,7 +12,7 @@ services:
     name: sniper-frontend
     buildCommand: >
       bun install &&
-      bun run build --workspace=apps/sniper &&
+      bun run --filter @sniper/app build &&
       cp -r apps/sniper/.next/static apps/sniper/.next/standalone/apps/sniper/.next/static &&
       cp -r apps/sniper/public apps/sniper/.next/standalone/apps/sniper/public
     startCommand: HOSTNAME=0.0.0.0 node apps/sniper/.next/standalone/apps/sniper/server.js
