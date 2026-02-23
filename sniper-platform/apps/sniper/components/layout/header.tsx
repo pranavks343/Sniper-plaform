@@ -291,7 +291,7 @@ export function Header() {
       setSessionOpen(isWeekday && minutesSinceMidnight >= openAt && minutesSinceMidnight < closeAt);
     };
     refresh();
-    const t = window.setInterval(refresh, 1000);
+    const t = window.setInterval(refresh, 5000);
     return () => window.clearInterval(t);
   }, []);
 

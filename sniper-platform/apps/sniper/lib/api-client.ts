@@ -43,6 +43,10 @@ const api = axios.create({
   timeout: 35000,
 });
 
+// Throttle 401 redirect to avoid dashboard ↔ login loop (e.g. token not synced yet).
+const AUTH_REDIRECT_THROTTLE_MS = 5000;
+let lastAuthRedirectAt = 0;
+
 function isAuthRequest(url: string | undefined): boolean {
   if (!url) return false;
   const path = url.startsWith('http') ? new URL(url).pathname : url;
@@ -56,9 +60,6 @@ api.interceptors.request.use(async (config) => {
     await new Promise((r) => setTimeout(r, 150));
     token = localStorage.getItem('token');
   }
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8a34fab1-5df0-4a2d-9afe-dbecd9ff02e1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:request-interceptor',message:'outgoing request token state',data:{url:config.url,hasToken:!!token,tokenLength:token?.length??0,tokenStart:token?token.slice(0,12):'NONE'},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -82,10 +83,11 @@ api.interceptors.response.use(
       (typeof detail === 'string' && /missing authorization|unauthorized|invalid token/i.test(detail));
 
     if (isAuthError && typeof window !== 'undefined') {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/8a34fab1-5df0-4a2d-9afe-dbecd9ff02e1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:response-interceptor',message:'401 redirect triggered',data:{url:error?.config?.url,status:error?.response?.status,detail:error?.response?.data?.detail,wouldRedirect:true},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-      // #endregion
-      window.location.href = '/login';
+      const now = Date.now();
+      if (now - lastAuthRedirectAt >= AUTH_REDIRECT_THROTTLE_MS) {
+        lastAuthRedirectAt = now;
+        window.location.href = '/login';
+      }
       return Promise.reject(new Error('Session expired or not signed in. Redirecting to login.'));
     }
 
