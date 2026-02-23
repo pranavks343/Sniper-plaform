@@ -41,7 +41,7 @@ async def cancel_order(order_id: str, container: Container = Depends(get_contain
 
 @router.get('/positions', response_model=list[PositionOut])
 async def get_positions(container: Container = Depends(get_container), _: str = Depends(verify_token)) -> list[dict]:
-    return container.execution_service.get_positions()
+    return await container.execution_service.get_positions()
 
 
 @router.get('/trades', response_model=list[TradeOut])

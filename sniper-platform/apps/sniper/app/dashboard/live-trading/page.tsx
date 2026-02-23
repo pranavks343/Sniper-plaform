@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { TradingWorkspace } from '@/components/charts/trading-workspace';
+import { OrderEntryPanel } from '@/components/trading/order-entry-panel';
 import { PositionTable } from '@/components/trading/position-table';
 import { Badge } from '@/lib/ui';
 import { usePositions } from '@/hooks/use-positions';
@@ -180,7 +181,7 @@ export default function LiveTradingPage() {
       <div className="grid gap-4 xl:grid-cols-4">
         {/* Chart */}
         <div className="lt-chart xl:col-span-3">
-          <TradingWorkspace symbol="AAPL" />
+          <TradingWorkspace symbol="NIFTY" />
         </div>
 
         {/* Algo control panel */}
@@ -253,6 +254,9 @@ export default function LiveTradingPage() {
               </div>
             ))}
           </div>
+
+          {/* Order Entry */}
+          <OrderEntryPanel />
         </div>
       </div>
 

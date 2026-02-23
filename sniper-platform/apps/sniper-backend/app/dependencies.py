@@ -155,6 +155,12 @@ async def verify_token(
 
     Returns user identifier on success, raises 401 on failure.
     """
+    # Dev bypass: skip auth entirely when SKIP_AUTH=true
+    settings = get_settings()
+    if settings.skip_auth:
+        logger.debug('Auth bypassed (SKIP_AUTH=true) — using default user')
+        return settings.default_user_id
+
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

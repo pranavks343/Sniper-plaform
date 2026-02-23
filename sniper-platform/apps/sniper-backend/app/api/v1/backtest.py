@@ -9,8 +9,9 @@ router = APIRouter(prefix='/backtest', tags=['backtest'])
 
 
 async def _ensure_analysis_services(container: Container) -> None:
+    """Best-effort check – don't block backtesting if quantum is offline."""
     try:
-        await container.ensure_mandatory_analysis_services(strict=True)
+        await container.ensure_mandatory_analysis_services(strict=False)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

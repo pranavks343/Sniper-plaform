@@ -31,6 +31,13 @@ class RiskMetrics(BaseModel):
     trading_allowed: bool
 
 
+class PortfolioStateUpdate(BaseModel):
+    delta: float = 0.0
+    gamma: float = 0.0
+    theta: float = 0.0
+    vega: float = 0.0
+
+
 class CircuitBreakerRequest(BaseModel):
     reason: str
 

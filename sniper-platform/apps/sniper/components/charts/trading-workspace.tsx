@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useRef, useState, useMemo, useCallback } from 'react';
-import { GripVertical, RotateCcw, Search, X } from 'lucide-react';
+import { GripVertical, Loader2, RotateCcw, Search, X } from 'lucide-react';
 
 import { useTradingFeed } from '@/hooks/use-trading-feed';
 import { clamp } from '@/lib/ui';
@@ -10,15 +10,22 @@ import type { OverlayVisibility, WorkspacePanel } from '@/types/chart';
 
 import { MultiSeriesLineChart } from './multi-series-line-chart';
 
-const TradingViewChart = dynamic(() => import('./trading-view-chart').then((m) => ({ default: m.TradingViewChart })), {
-  ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-slate-400">Loading chart…</div>,
-});
+const AdvancedTradingChart = dynamic(
+  () => import('./advanced-trading-chart').then((m) => ({ default: m.AdvancedTradingChart })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-slate-400">
+        <Loader2 size={20} className="animate-spin mr-2" /> Loading chart…
+      </div>
+    ),
+  }
+);
 import { OrderflowPanel } from './orderflow-panel';
 
 /* ─── Popular symbols ─────────────────────────────────────────────────────── */
 const QUICK_SYMBOLS = [
-  { label: 'AAPL',       value: 'NASDAQ:AAPL' },
+  { label: 'NIFTY 50',   value: 'NSE:NIFTY' },
   { label: 'BANKNIFTY',  value: 'NSE:BANKNIFTY' },
   { label: 'SENSEX',     value: 'BSE:SENSEX' },
   { label: 'RELIANCE',   value: 'NSE:RELIANCE' },
@@ -33,6 +40,19 @@ const QUICK_SYMBOLS = [
   { label: 'LT',         value: 'NSE:LT' },
   { label: 'AXISBANK',   value: 'NSE:AXISBANK' },
   { label: 'KOTAKBANK',  value: 'NSE:KOTAKBANK' },
+  { label: 'HINDUNILVR', value: 'NSE:HINDUNILVR' },
+  { label: 'BHARTIARTL', value: 'NSE:BHARTIARTL' },
+  { label: 'MARUTI',     value: 'NSE:MARUTI' },
+  { label: 'TATAMOTORS', value: 'NSE:TATAMOTORS' },
+  { label: 'TATASTEEL',  value: 'NSE:TATASTEEL' },
+  { label: 'SUNPHARMA',  value: 'NSE:SUNPHARMA' },
+  { label: 'ADANIENT',   value: 'NSE:ADANIENT' },
+  { label: 'POWERGRID',  value: 'NSE:POWERGRID' },
+  { label: 'NTPC',       value: 'NSE:NTPC' },
+  { label: 'AAPL',       value: 'NASDAQ:AAPL' },
+  { label: 'TSLA',       value: 'NASDAQ:TSLA' },
+  { label: 'GOOGL',      value: 'NASDAQ:GOOGL' },
+  { label: 'MSFT',       value: 'NASDAQ:MSFT' },
 ];
 
 const COL_SPAN_CLASS: Record<number, string> = {
@@ -63,7 +83,7 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
 
   /* ── Internal feed (comparison / momentum / orderflow panels) ─────────── */
   const feedSymbol = tvSymbol.split(':').pop() ?? defaultSymbol;
-  const { candles, ema20, vwap, momentum, benchmark, orderBook, timeSales, source, lastPrice, changePct } =
+  const { candles, ema20, ema50, vwap, momentum, benchmark, orderBook, timeSales, source, lastPrice, changePct, loading } =
     useTradingFeed(feedSymbol);
 
   /* ── Layout state ─────────────────────────────────────────────────────── */
@@ -223,10 +243,11 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
             )}
           </div>
 
-          {/* Live price chip - suppressHydrationWarning: values differ server vs client (live feed) */}
+          {/* Live price chip */}
           <div
             className="flex items-center gap-2 rounded-md px-3 py-2 text-[13px]"
             style={{ background: 'var(--tv-bg-elevated)', border: '1px solid var(--tv-border)' }}
+            suppressHydrationWarning
           >
             <span className="font-mono font-bold" style={{ color: 'var(--tv-text-primary)' }}>
               {displaySymbol}
@@ -235,7 +256,7 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
               {lastPrice.toFixed(2)}
             </span>
             <span className="font-mono font-semibold text-[12px]" style={{ color: changeTone }} suppressHydrationWarning>
-              {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
+              {`${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`}
             </span>
           </div>
 
@@ -243,6 +264,7 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
           <div
             className="flex items-center gap-1.5 rounded-md px-3 py-2 text-[11px]"
             style={{ background: 'var(--tv-bg-elevated)', border: '1px solid var(--tv-border)' }}
+            suppressHydrationWarning
           >
             <span
               className="h-1.5 w-1.5 rounded-full"
@@ -250,7 +272,7 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
             />
             <span style={{ color: 'var(--tv-text-muted)' }}>Feed:</span>
             <span className="font-semibold uppercase" style={{ color: source === 'live' ? '#26a69a' : '#f7a600' }}>
-              {source === 'live' ? 'TradingView Live' : 'Simulated'}
+              {source === 'live' ? 'Yahoo Finance Live' : 'Simulated'}
             </span>
           </div>
 
@@ -266,7 +288,7 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
         {/* Row 2: quick-select chips */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[10px] mr-1" style={{ color: 'var(--tv-text-muted)' }}>Quick:</span>
-          {QUICK_SYMBOLS.slice(0, 12).map((q) => {
+          {QUICK_SYMBOLS.slice(0, 18).map((q) => {
             const isActive = tvSymbol === q.value;
             return (
               <button
@@ -320,13 +342,23 @@ export function TradingWorkspace({ symbol: defaultSymbol }: { symbol: string }) 
 
             {/* Panel body */}
             <div className="h-[calc(100%-41px)]">
-              {/* ── Price Panel: real TradingView live chart ── */}
+              {/* ── Price Panel: candlestick chart powered by Yahoo Finance data ── */}
               {panel.kind === 'main' && (
-                <TradingViewChart
-                  symbol={tvSymbol}
-                  height={panel.h * 170 - 41}
-                  interval="D"
-                />
+                loading ? (
+                  <div className="flex h-full items-center justify-center gap-2" style={{ color: 'var(--tv-text-muted)' }}>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span className="text-[13px]">Loading {displaySymbol} data…</span>
+                  </div>
+                ) : (
+                  <AdvancedTradingChart
+                    candles={candles}
+                    ema20={ema20}
+                    ema50={ema50}
+                    vwap={vwap}
+                    overlays={overlays}
+                    height={panel.h * 170 - 41}
+                  />
+                )
               )}
 
               {panel.kind === 'comparison' && (

@@ -132,8 +132,9 @@ export const apiClient = {
   },
   risk: {
     getMetrics:    async (): Promise<RiskMetrics>  => (await api.get('/risk/metrics')).data,
-    // /risk/greeks is pure in-memory — no DB, no Convex — always responds instantly
     getGreeks:     async (): Promise<Greeks>        => (await api.get('/risk/greeks')).data,
+    setPortfolioState: async (payload: Greeks): Promise<Greeks> =>
+      (await api.put('/risk/portfolio-state', payload)).data,
     getLimits:     async (): Promise<RiskLimits>    => (await api.get('/risk/limits')).data,
     getViolations: async (): Promise<RiskViolation[]> => (await api.get('/risk/violations')).data,
   },
@@ -170,5 +171,14 @@ export const apiClient = {
     results: async (jobId: string): Promise<Record<string, unknown>> =>
       (await api.get(`/backtest/${jobId}/results`)).data,
     list:    async (): Promise<Record<string, unknown>[]> => (await api.get('/backtest/')).data,
+  },
+  market: {
+    getHistory: async (symbol: string, period = '6mo', interval = '1d'): Promise<{
+      timestamp: string; open: number; high: number; low: number; close: number; volume: number;
+    }[]> => (await api.get('/market/history', { params: { symbol, period, interval } })).data,
+    getPrice: async (symbol: string): Promise<{ symbol: string; price: number }> =>
+      (await api.get('/market/price', { params: { symbol } })).data,
+    getPrices: async (symbols: string[]): Promise<Record<string, number>> =>
+      (await api.get('/market/prices', { params: { symbols: symbols.join(',') } })).data,
   },
 };

@@ -14,6 +14,7 @@ from app.api.v1.ai import router as ai_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.backtest import router as backtest_router
 from app.api.v1.execution import router as execution_router
+from app.api.v1.market import router as market_router
 from app.api.v1.quantum import router as quantum_router
 from app.api.v1.risk import router as risk_router
 from app.api.v1.strategy import router as strategy_router
@@ -29,19 +30,27 @@ logger = get_logger(__name__)
 
 
 async def _publish_market_ticks(container) -> None:
-    prices = {
-        'NIFTY': 22450.0,
-        'BANKNIFTY': 48900.0,
-    }
-    interval = max(0.25, float(settings.market_tick_interval_seconds))
+    from app.utils.market_data import get_market_data_service
+
+    mds = get_market_data_service()
+    symbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE', 'TCS', 'INFY', 'HDFCBANK']
+    # Cache previous prices for fallback
+    cached: dict[str, float] = {}
+    interval = max(3.0, float(settings.market_tick_interval_seconds))
+
     while True:
-        for symbol, previous in list(prices.items()):
-            next_price = max(1.0, previous + random.uniform(-4.5, 4.5))
-            prices[symbol] = next_price
+        for symbol in symbols:
+            try:
+                live = await mds.aget_price(symbol)
+                price = live if live is not None else cached.get(symbol, 100.0)
+                cached[symbol] = price
+            except Exception:
+                price = cached.get(symbol, 100.0)
+
             tick = {
                 'symbol': symbol,
-                'ltp': round(next_price, 2),
-                'price': round(next_price, 2),
+                'ltp': round(price, 2),
+                'price': round(price, 2),
                 'volume': random.randint(10, 250),
                 'ts': time.time(),
             }
@@ -155,6 +164,7 @@ app.include_router(ai_router, prefix=settings.api_prefix)
 app.include_router(strategy_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(execution_router, prefix=settings.api_prefix)
+app.include_router(market_router, prefix=settings.api_prefix)
 app.include_router(risk_router, prefix=settings.api_prefix)
 app.include_router(backtest_router, prefix=settings.api_prefix)
 app.include_router(quantum_router, prefix=settings.api_prefix)

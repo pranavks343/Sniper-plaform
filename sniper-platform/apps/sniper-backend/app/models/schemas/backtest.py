@@ -6,10 +6,12 @@ from pydantic import BaseModel
 
 
 class BacktestCreate(BaseModel):
-    strategy_id: str
-    start_date: datetime
-    end_date: datetime
-    initial_capital: float
+    strategy_id: str | None = None
+    symbol: str = 'NIFTY'
+    strategy_type: str = 'momentum'
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    initial_capital: float = 1_000_000.0
     transaction_cost_model: str = 'realistic'
 
 

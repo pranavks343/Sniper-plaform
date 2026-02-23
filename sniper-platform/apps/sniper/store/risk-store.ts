@@ -13,6 +13,7 @@ type RiskState = {
   error: string | null;
   fetchRiskMetrics: () => Promise<void>;
   fetchGreeks: () => Promise<void>;
+  setPortfolioState: (greeks: Greeks) => Promise<void>;
   fetchViolations: () => Promise<void>;
   connectRealtime: () => void;
 };
@@ -67,6 +68,25 @@ export const useRiskStore = create<RiskState>((set) => ({
       });
     } catch (err) {
       set({ greeksLoading: false, error: err instanceof Error ? err.message : 'Failed to load greeks' });
+    }
+  },
+
+  setPortfolioState: async (payload: Greeks) => {
+    set({ greeksLoading: true });
+    try {
+      const data = await apiClient.risk.setPortfolioState(payload);
+      set({
+        greeks: {
+          delta: data.delta ?? 0,
+          gamma: data.gamma ?? 0,
+          theta: data.theta ?? 0,
+          vega:  data.vega  ?? 0,
+        },
+        greeksLoading: false,
+        error: null,
+      });
+    } catch (err) {
+      set({ greeksLoading: false, error: err instanceof Error ? err.message : 'Failed to update portfolio state' });
     }
   },
 

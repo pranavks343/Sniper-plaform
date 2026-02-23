@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/ui';
 import { useUiStore } from '@/store/ui-store';
+import { SidebarMarketNews } from './sidebar-market-news';
 
 /* ─── Nav structure ───────────────────────────────────────────────────────── */
 type NavSection = 'algo' | 'monitor' | 'account';
@@ -139,10 +140,20 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* Information */}
+      <div className={cn('mt-3 flex flex-col gap-0.5', sidebarOpen ? 'px-2' : 'items-center')}>
+        <div className={cn('tv-divider', sidebarOpen ? 'w-full' : 'w-8')} />
+        {sidebarOpen && (
+          <p className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--tv-text-muted)' }}>
+            Information
+          </p>
+        )}
+        <SidebarMarketNews sidebarOpen={sidebarOpen} />
+      </div>
+
       {/* Algo engine status */}
       <div className={cn('mb-2 flex flex-col gap-2', sidebarOpen ? 'items-stretch px-2' : 'items-center')}>
         <div className={cn('tv-divider', sidebarOpen ? 'w-full' : 'w-8')} />
-        {/* Algo engine status */}
         <div
           className="tv-sidebar-item"
           style={{ cursor: 'default', borderColor: 'rgba(38,166,154,0.25)', background: 'rgba(38,166,154,0.08)' }}

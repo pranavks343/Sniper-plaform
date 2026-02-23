@@ -20,6 +20,8 @@ import {
   Gauge,
 } from 'lucide-react';
 
+import { useLiveIndices, type IndexTicker } from '@/hooks/use-live-indices';
+
 if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger);
 
 /* ─── Animated candlestick SVG ────────────────────────────────────────────── */
@@ -427,6 +429,7 @@ export default function LandingPageClient() {
   const valueStripRef = useRef<HTMLDivElement>(null);
   const ctaBannerRef  = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { tickers: liveIndices } = useLiveIndices();
 
   useEffect(() => {
     setMounted(true);
@@ -652,9 +655,21 @@ export default function LandingPageClient() {
             style={{ borderColor: 'var(--tv-border)' }}
           >
             <div className="flex items-center gap-3">
-              <span className="text-[13px] font-bold" style={{ color: 'var(--tv-text-primary)' }}>NIFTY 50</span>
-              <span className="text-[13px] font-mono font-semibold" style={{ color: 'var(--tv-bull)' }}>24,891.65</span>
-              <span className="text-[11px]" style={{ color: 'var(--tv-bull)' }}>+47.20 (+0.19%)</span>
+              {(() => {
+                const n = liveIndices.find((t) => t.symbol === 'NIFTY');
+                const bull = (n?.change ?? 0) >= 0;
+                return (
+                  <>
+                    <span className="text-[13px] font-bold" style={{ color: 'var(--tv-text-primary)' }}>NIFTY 50</span>
+                    <span className="text-[13px] font-mono font-semibold" style={{ color: bull ? 'var(--tv-bull)' : 'var(--tv-bear)' }}>
+                      {n && n.price > 0 ? n.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                    </span>
+                    <span className="text-[11px]" style={{ color: bull ? 'var(--tv-bull)' : 'var(--tv-bear)' }}>
+                      {n && n.price > 0 ? `${bull ? '+' : ''}${n.change.toFixed(2)} (${bull ? '+' : ''}${n.pct.toFixed(2)}%)` : ''}
+                    </span>
+                  </>
+                );
+              })()}
             </div>
             <div className="flex items-center gap-2">
               {['1m', '5m', '15m', '1h', 'D'].map((tf) => (
@@ -682,22 +697,26 @@ export default function LandingPageClient() {
             className="flex overflow-x-auto border-t"
             style={{ borderColor: 'var(--tv-border)' }}
           >
-            {[
-              { sym: 'BANKNIFTY', price: '53,241', chg: '+0.23%', bull: true },
-              { sym: 'SENSEX',    price: '81,765', chg: '-0.04%', bull: false },
-              { sym: 'USDINR',    price: '83.92',  chg: '+0.10%', bull: true },
-              { sym: 'CRUDEOIL',  price: '6,842',  chg: '+0.55%', bull: true },
-            ].map((t) => (
-              <div
-                key={t.sym}
-                className="hero-ticker flex flex-col px-4 py-2 border-r flex-shrink-0"
-                style={{ borderColor: 'var(--tv-border)' }}
-              >
-                <span className="text-[10px] font-semibold" style={{ color: 'var(--tv-text-muted)' }}>{t.sym}</span>
-                <span className="text-[12px] font-mono font-bold" style={{ color: 'var(--tv-text-primary)' }}>{t.price}</span>
-                <span className="text-[10px] font-medium" style={{ color: t.bull ? 'var(--tv-bull)' : 'var(--tv-bear)' }}>{t.chg}</span>
-              </div>
-            ))}
+            {liveIndices
+              .filter((t) => t.symbol !== 'NIFTY')
+              .map((t) => {
+                const bull = t.change >= 0;
+                return (
+                  <div
+                    key={t.symbol}
+                    className="hero-ticker flex flex-col px-4 py-2 border-r flex-shrink-0"
+                    style={{ borderColor: 'var(--tv-border)' }}
+                  >
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--tv-text-muted)' }}>{t.symbol}</span>
+                    <span className="text-[12px] font-mono font-bold" style={{ color: 'var(--tv-text-primary)' }}>
+                      {t.price > 0 ? t.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                    </span>
+                    <span className="text-[10px] font-medium" style={{ color: bull ? 'var(--tv-bull)' : 'var(--tv-bear)' }}>
+                      {t.price > 0 ? `${bull ? '+' : ''}${t.pct.toFixed(2)}%` : ''}
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>

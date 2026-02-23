@@ -18,11 +18,13 @@ from app.core.execution_engine.cost_estimator import CostEstimator
 from app.core.execution_engine.order_router import SmartOrderRouter
 from app.core.execution_engine.order_router_quantum import QuantumOrderRouter, QuantumRoutingConfig
 from app.core.execution_engine.rl_agent import PPOExecutionAgent
+from app.core.risk_engine.greeks_calculator import GreeksCalculator
 from app.models.database.audit import AuditLog
 from app.models.database.execution import BrokerAccount, Order, OrderEvent, PnlDaily, PnlIntraday, PositionSnapshot, Trade
 from app.utils.convex_bus import ConvexBus
 from app.utils.encryption import DataEncryptor
 from app.utils.logger import get_logger
+from app.utils.market_data import get_market_data_service
 
 logger = get_logger(__name__)
 
@@ -45,6 +47,7 @@ class ExecutionService:
         self.encryptor = encryptor
         self.cost_estimator = CostEstimator()
         self.rl_agent = PPOExecutionAgent()
+        self.greeks_calculator = GreeksCalculator()
         self.classical_router = SmartOrderRouter()
         self.quantum_router = QuantumOrderRouter()
         self.broker = self._build_broker()
@@ -190,11 +193,14 @@ class ExecutionService:
         if not self.risk_service.check_pre_trade({'delta': quantity if side == 'BUY' else -quantity, 'gamma': 0.0}):
             raise ValueError('pre-trade risk check failed')
 
+        # Fetch live price; fall back to payload price or 100.0 if unavailable
+        live_price = await get_market_data_service().aget_price(symbol)
+        resolved_price = live_price or float(payload.get('price') or 100.0)
         market_state = {
-            'price': float(payload.get('price') or 100.0),
+            'price': resolved_price,
             'spread': 0.05,
             'avg_daily_volume': 2_000_000,
-            'instrument_type': 'FUT',
+            'instrument_type': str(payload.get('instrument_type', 'EQ')).upper(),
         }
 
         if self.settings.enable_quantum_routing and quantity * market_state['price'] >= self.settings.quantum_routing_min_order_size:
@@ -295,7 +301,7 @@ class ExecutionService:
                         )
                     )
 
-                positions = self.get_positions()
+                positions = await self.get_positions()
                 for pos in positions:
                     session.add(
                         PositionSnapshot(
@@ -316,7 +322,9 @@ class ExecutionService:
                     )
 
                 symbol_upper = str(symbol).upper()
-                target_position = next((pos for pos in positions if str(pos.get('symbol', '')).upper() == symbol_upper), None)
+                target_position = next(
+                    (pos for pos in positions if str(pos.get('symbol', '')).upper() == symbol_upper), None
+                )
                 if target_position is not None:
                     unrealized = float(target_position.get('pnl', 0.0))
                     session.add(
@@ -456,13 +464,48 @@ class ExecutionService:
             self._emit_order_update(order)
             return order
 
-    def get_positions(self) -> list[dict]:
+    async def get_positions(self) -> list[dict]:
         positions = self.broker.get_positions()
+        mds = get_market_data_service()
         for pos in positions:
-            pos.setdefault('delta', 0.0)
-            pos.setdefault('gamma', 0.0)
-            pos.setdefault('theta', 0.0)
-            pos.setdefault('vega', 0.0)
+            symbol = str(pos.get('symbol', ''))
+            qty = int(pos.get('quantity', 0))
+
+            # Refresh current price with live market data
+            live_price = await mds.aget_price(symbol)
+            if live_price is not None:
+                pos['current_price'] = live_price
+                avg = float(pos.get('avg_price', live_price))
+                pos['pnl'] = (live_price - avg) * qty
+            pos.setdefault('current_price', float(pos.get('avg_price', 0.0)))
+
+            # Calculate Greeks
+            instrument_type = str(pos.get('instrument_type', 'EQ')).upper()
+            if instrument_type == 'OPTION' and pos.get('strike') and pos.get('expiry'):
+                try:
+                    g = self.greeks_calculator.calculate_single_option(
+                        spot=float(pos.get('current_price', 100.0)),
+                        strike=float(pos['strike']),
+                        expiry=float(pos['expiry']),
+                        volatility=float(pos.get('volatility', 0.2)),
+                        option_type=str(pos.get('option_type', 'CALL')),
+                        risk_free_rate=float(pos.get('risk_free_rate', 0.06)),
+                    )
+                    pos['delta'] = round(g.delta * qty, 4)
+                    pos['gamma'] = round(g.gamma * qty, 6)
+                    pos['theta'] = round(g.theta * qty, 4)
+                    pos['vega'] = round(g.vega * qty, 4)
+                except Exception:
+                    pos.setdefault('delta', 0.0)
+                    pos.setdefault('gamma', 0.0)
+                    pos.setdefault('theta', 0.0)
+                    pos.setdefault('vega', 0.0)
+            else:
+                # Equity/futures: delta = net quantity, other Greeks = 0
+                pos['delta'] = float(qty)
+                pos.setdefault('gamma', 0.0)
+                pos.setdefault('theta', 0.0)
+                pos.setdefault('vega', 0.0)
         return positions
 
     async def list_trades(self, strategy_id: str | None = None, symbol: str | None = None) -> list[dict]:
@@ -520,7 +563,7 @@ class ExecutionService:
     def _emit_position_update(self, symbol: str | None = None) -> None:
         if self.event_bus is None:
             return
-        positions = [self._json_ready(pos) for pos in self.get_positions()]
+        positions = [self._json_ready(pos) for pos in self.broker.get_positions()]
         payload = {'positions': positions}
         channel = 'position:update'
         if symbol:

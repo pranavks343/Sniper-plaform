@@ -18,36 +18,41 @@ import Link from 'next/link';
 import gsap from 'gsap';
 
 import { useUiStore } from '@/store/ui-store';
-
-/* ─── Mock ticker data ───────────────────────────────────────────────────── */
-const TICKERS = [
-  { symbol: 'NIFTY',     price: 24_891.65, change: +47.20,  pct: +0.19 },
-  { symbol: 'BANKNIFTY', price: 53_241.10, change: +124.55, pct: +0.23 },
-  { symbol: 'SENSEX',    price: 81_765.40, change: -32.85,  pct: -0.04 },
-  { symbol: 'USDINR',    price: 83.92,     change: +0.08,   pct: +0.10 },
-];
+import { useLiveIndices } from '@/hooks/use-live-indices';
 
 function TickerCell({
   symbol,
   price,
   change,
   pct,
+  loading,
 }: {
   symbol: string;
   price: number;
   change: number;
   pct: number;
+  loading?: boolean;
 }) {
   const bull = change >= 0;
+  const showSkeleton = loading && price === 0;
   return (
     <div className="ticker-item">
       <span className="ticker-symbol">{symbol}</span>
-      <span className={`ticker-price ${bull ? 'bull-glow' : 'bear-glow'}`}>
-        {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </span>
-      <span className={`ticker-change ${bull ? 'bull-glow' : 'bear-glow'}`}>
-        {bull ? '+' : ''}{change.toFixed(2)} ({bull ? '+' : ''}{pct.toFixed(2)}%)
-      </span>
+      {showSkeleton ? (
+        <>
+          <span className="ticker-price" style={{ color: 'var(--tv-text-muted)' }}>—</span>
+          <span className="ticker-change" style={{ color: 'var(--tv-text-muted)' }}>loading…</span>
+        </>
+      ) : (
+        <>
+          <span className={`ticker-price ${bull ? 'bull-glow' : 'bear-glow'}`}>
+            {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className={`ticker-change ${bull ? 'bull-glow' : 'bear-glow'}`}>
+            {bull ? '+' : ''}{change.toFixed(2)} ({bull ? '+' : ''}{pct.toFixed(2)}%)
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -251,13 +256,15 @@ function ProfileDropdown() {
 /* ─── Header ─────────────────────────────────────────────────────────────── */
 export function Header() {
   const [clock, setClock] = useState('');
-  const [sessionOpen] = useState(true);
+  const [sessionOpen, setSessionOpen] = useState(false);
   const { darkMode, sidebarOpen, toggleDarkMode, toggleSidebar } = useUiStore();
+  const { tickers: liveTickers, loading: tickersLoading } = useLiveIndices();
   const headerRef = useRef<HTMLElement>(null);
 
-  // Clock
+  // Clock + NSE session status (IST: 9:15–15:30, Mon–Fri)
   useEffect(() => {
     const refresh = () => {
+      const now = new Date();
       setClock(
         new Intl.DateTimeFormat('en-IN', {
           hour: '2-digit',
@@ -265,8 +272,23 @@ export function Header() {
           second: '2-digit',
           timeZone: 'Asia/Kolkata',
           hour12: false,
-        }).format(new Date())
+        }).format(now)
       );
+      const ist = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: 'numeric',
+        weekday: 'short',
+        hour12: false,
+      }).formatToParts(now);
+      const hour = parseInt(ist.find((p) => p.type === 'hour')?.value ?? '0', 10);
+      const minute = parseInt(ist.find((p) => p.type === 'minute')?.value ?? '0', 10);
+      const weekday = ist.find((p) => p.type === 'weekday')?.value ?? '';
+      const isWeekday = !['Sat', 'Sun'].includes(weekday);
+      const minutesSinceMidnight = hour * 60 + minute;
+      const openAt = 9 * 60 + 15;
+      const closeAt = 15 * 60 + 30;
+      setSessionOpen(isWeekday && minutesSinceMidnight >= openAt && minutesSinceMidnight < closeAt);
     };
     refresh();
     const t = window.setInterval(refresh, 1000);
@@ -314,15 +336,22 @@ export function Header() {
           className="flex items-center gap-2 border-r px-3"
           style={{ borderColor: 'var(--tv-border)', minWidth: 'max-content' }}
         >
-          <span className="session-pill">
-            <span className="live-dot" />
+          <span
+            className="session-pill"
+            style={sessionOpen ? undefined : { opacity: 0.85 }}
+            title={sessionOpen ? 'NSE market open (9:15–15:30 IST)' : 'NSE market closed'}
+          >
+            <span
+              className="live-dot"
+              style={{ background: sessionOpen ? '#26a69a' : 'var(--tv-text-muted)' }}
+            />
             {sessionOpen ? 'NSE Open' : 'Closed'}
           </span>
         </div>
 
         <div className="flex items-stretch overflow-x-auto">
-          {TICKERS.map((t) => (
-            <TickerCell key={t.symbol} {...t} />
+          {liveTickers.map((t) => (
+            <TickerCell key={t.symbol} {...t} loading={tickersLoading} />
           ))}
         </div>
       </div>

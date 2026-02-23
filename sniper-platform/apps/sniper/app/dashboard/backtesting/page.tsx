@@ -94,6 +94,8 @@ export default function BacktestingPage() {
 
   // Config form state
   const [cfgStrategyId, setCfgStrategyId] = useState('');
+  const [cfgSymbol, setCfgSymbol]         = useState('NIFTY');
+  const [cfgStrategyType, setCfgStrategyType] = useState('momentum');
   const [cfgFrom, setCfgFrom]             = useState('');
   const [cfgTo, setCfgTo]                 = useState('');
   const [cfgCapital, setCfgCapital]       = useState('1000000');
@@ -101,15 +103,34 @@ export default function BacktestingPage() {
   const [progress, setProgress]           = useState(0);
   const [runError, setRunError]           = useState<string | null>(null);
 
-  // Load existing backtest runs on mount
+  // Fetch full results for a completed run (metrics + equity curve)
+  const loadResults = useCallback(async (jobId: string) => {
+    try {
+      const results = await apiClient.backtest.results(jobId);
+      const completed = mapApiRun({ ...results, job_id: jobId, status: 'completed', progress: 1 });
+      setRuns((prev) => prev.map((r) => r.jobId === jobId ? completed : r));
+      setSelected(completed);
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load existing backtest runs on mount, then auto-load results for first completed run
   useEffect(() => {
     apiClient.backtest.list()
-      .then((data) => {
+      .then(async (data) => {
         const mapped = data.map((r) => mapApiRun(r));
         setRuns(mapped);
-        if (mapped.length > 0) setSelected(mapped[0]);
+        // Auto-select and load results for the first completed run
+        const firstCompleted = mapped.find((r) => r.status === 'completed');
+        if (firstCompleted) {
+          setSelected(firstCompleted);
+          loadResults(firstCompleted.jobId);
+        } else if (mapped.length > 0) {
+          setSelected(mapped[0]);
+        }
       })
       .catch(() => {/* backend may not have runs yet */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Set default strategy when strategies load
@@ -130,31 +151,63 @@ export default function BacktestingPage() {
 
   const mapApiRun = (r: Record<string, unknown>): BacktestRun => {
     const metrics = (r.metrics ?? {}) as Record<string, unknown>;
+    // config holds symbol/strategy_type when they aren't top-level
+    const config  = (r.config  ?? {}) as Record<string, unknown>;
+
+    // Equity curve: backend sends [{t, value, timestamp}, ...]
     const equity = Array.isArray(r.equity_curve)
-      ? (r.equity_curve as Record<string, unknown>[]).map((e) => Number(e.equity ?? e.value ?? 0))
+      ? (r.equity_curve as Record<string, unknown>[]).map((e) => Number(e.value ?? e.equity ?? 0))
       : [];
+
+    // Symbol: top-level > config > metrics
+    const symbol = String(r.symbol ?? config.symbol ?? metrics.symbol ?? '--');
+
+    // Dates
+    const from = String(r.start_date ?? r.from ?? config.start_date ?? '');
+    const to   = String(r.end_date   ?? r.to   ?? config.end_date   ?? '');
+
+    // ── Metrics ──
+    // Backend now sends percentages as actual % values (e.g. win_rate=33.33, total_return=-1.23)
+    // and net_pnl / avg_win / avg_loss in ₹.
+    const netPnl       = Number(metrics.net_pnl       ?? metrics.total_pnl ?? 0);
+    const totalReturn  = Number(metrics.total_return   ?? 0);   // already in %
+    const annReturn    = Number(metrics.ann_return     ?? (Number(metrics.cagr ?? 0) * 100));
+    const sharpe       = Number(metrics.sharpe         ?? 0);
+    const sortino      = Number(metrics.sortino        ?? 0);
+    // max_drawdown: backend sends positive %; older runs sent negative decimal → normalise
+    const rawDD        = Number(metrics.max_drawdown   ?? 0);
+    const maxDrawdown  = rawDD <= 0 ? Math.abs(rawDD) * 100 : rawDD;   // always positive %
+    // win_rate: backend sends %; older runs sent fraction → normalise
+    const rawWR        = Number(metrics.win_rate       ?? 0);
+    const winRate      = rawWR <= 1 ? rawWR * 100 : rawWR;             // always %
+    const profitFactor = Number(metrics.profit_factor  ?? 0);
+    const calmar       = Number(metrics.calmar         ?? 0);
+    const avgWin       = Number(metrics.avg_win        ?? 0);
+    const avgLoss      = Number(metrics.avg_loss       ?? 0);
+    const totalTrades  = Number(metrics.total_trades   ?? metrics.num_trades ?? 0);
+
     return {
       jobId:        String(r.job_id ?? r.id ?? ''),
-      strategyId:   String(r.strategy_id ?? ''),
-      strategyName: String(r.strategy_name ?? r.strategy_id ?? 'Strategy'),
-      symbol:       String(r.symbol ?? metrics.symbol ?? '--'),
-      from:         String(r.start_date ?? r.from ?? ''),
-      to:           String(r.end_date   ?? r.to   ?? ''),
-      capital:      Number(r.initial_capital ?? 1000000),
+      strategyId:   String(r.strategy_id ?? config.strategy_id ?? ''),
+      strategyName: String(r.strategy_name ?? config.strategy_name ?? r.strategy_id ?? 'Strategy'),
+      symbol,
+      from,
+      to,
+      capital:      Number(r.initial_capital ?? config.initial_capital ?? 1_000_000),
       status:       (r.status as BacktestRun['status']) ?? 'pending',
       progress:     Number(r.progress ?? 0),
-      netPnl:       Number(metrics.net_pnl       ?? 0),
-      totalReturn:  Number(metrics.total_return   ?? 0),
-      annReturn:    Number(metrics.ann_return      ?? 0),
-      sharpe:       Number(metrics.sharpe          ?? 0),
-      sortino:      Number(metrics.sortino         ?? 0),
-      maxDrawdown:  Number(metrics.max_drawdown    ?? 0),
-      winRate:      Number(metrics.win_rate        ?? 0),
-      avgWin:       Number(metrics.avg_win         ?? 0),
-      avgLoss:      Number(metrics.avg_loss        ?? 0),
-      totalTrades:  Number(metrics.total_trades    ?? 0),
-      profitFactor: Number(metrics.profit_factor   ?? 0),
-      calmar:       Number(metrics.calmar          ?? 0),
+      netPnl,
+      totalReturn,
+      annReturn,
+      sharpe,
+      sortino,
+      maxDrawdown,
+      winRate,
+      avgWin,
+      avgLoss,
+      totalTrades,
+      profitFactor,
+      calmar,
       equity,
     };
   };
@@ -190,17 +243,18 @@ export default function BacktestingPage() {
 
   const runBacktest = async () => {
     setRunError(null);
-    if (!cfgStrategyId) { setRunError('Please select a strategy'); return; }
-    if (!cfgFrom || !cfgTo) { setRunError('Please select a date range'); return; }
+    if (!cfgSymbol.trim()) { setRunError('Please enter a symbol (e.g. NIFTY, RELIANCE)'); return; }
 
     try {
       setIsRunning(true);
       setProgress(0);
       const strategy = strategies.find((s) => s.id === cfgStrategyId);
       const { job_id } = await apiClient.backtest.create({
-        strategy_id:            cfgStrategyId,
-        start_date:             new Date(cfgFrom).toISOString(),
-        end_date:               new Date(cfgTo).toISOString(),
+        strategy_id:            cfgStrategyId || undefined,
+        symbol:                 cfgSymbol.trim(),
+        strategy_type:          cfgStrategyType,
+        start_date:             cfgFrom ? new Date(cfgFrom).toISOString() : undefined,
+        end_date:               cfgTo   ? new Date(cfgTo).toISOString()   : undefined,
         initial_capital:        Number(cfgCapital),
         transaction_cost_model: 'realistic',
       });
@@ -208,8 +262,8 @@ export default function BacktestingPage() {
       const newRun: BacktestRun = {
         jobId:        job_id,
         strategyId:   cfgStrategyId,
-        strategyName: strategy?.name ?? 'Strategy',
-        symbol:       (strategy?.parameters?.symbol as string) ?? '--',
+        strategyName: strategy?.name ?? cfgStrategyType,
+        symbol:       cfgSymbol,
         from:         cfgFrom,
         to:           cfgTo,
         capital:      Number(cfgCapital),
@@ -282,12 +336,44 @@ export default function BacktestingPage() {
                   <select
                     className="tv-select w-full"
                     value={cfgStrategyId}
-                    onChange={(e) => setCfgStrategyId(e.target.value)}
+                    onChange={(e) => {
+                      const sid = e.target.value;
+                      setCfgStrategyId(sid);
+                      const s = strategies.find((st) => st.id === sid);
+                      if (s?.parameters) {
+                        const p = s.parameters as Record<string, unknown>;
+                        if (p.symbol)        setCfgSymbol(String(p.symbol));
+                        if (p.strategy_type) setCfgStrategyType(String(p.strategy_type));
+                      }
+                    }}
                   >
                     <option value="">— Select strategy —</option>
                     {strategies.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="panel-caption mb-1.5 block">Symbol</label>
+                  <input
+                    className="tv-input w-full"
+                    type="text"
+                    placeholder="e.g. NIFTY, RELIANCE, TCS"
+                    value={cfgSymbol}
+                    onChange={(e) => setCfgSymbol(e.target.value.toUpperCase())}
+                  />
+                </div>
+                <div>
+                  <label className="panel-caption mb-1.5 block">Strategy Type</label>
+                  <select
+                    className="tv-select w-full"
+                    value={cfgStrategyType}
+                    onChange={(e) => setCfgStrategyType(e.target.value)}
+                  >
+                    <option value="momentum">Momentum</option>
+                    <option value="mean_reversion">Mean Reversion</option>
+                    <option value="breakout">Breakout</option>
+                    <option value="ema_crossover">EMA Crossover</option>
                   </select>
                 </div>
                 <div>
@@ -407,7 +493,14 @@ export default function BacktestingPage() {
               {runs.map((run) => (
                 <button
                   key={run.jobId}
-                  onClick={() => run.status === 'completed' && setSelected(run)}
+                  onClick={() => {
+                    if (run.status !== 'completed') return;
+                    setSelected(run);
+                    // Load full results (metrics + equity) if not already loaded
+                    if (!run.equity?.length || !run.totalTrades) {
+                      loadResults(run.jobId);
+                    }
+                  }}
                   className="w-full text-left px-4 py-3 transition-colors hover:bg-[var(--tv-bg-elevated)]"
                   style={{
                     background:  selected?.jobId === run.jobId ? 'var(--tv-bg-elevated)' : 'transparent',
@@ -486,18 +579,42 @@ export default function BacktestingPage() {
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 divide-x divide-y"
                     style={{ borderColor: 'var(--tv-border)' }}>
-                    <MetricCell label="Net P&L"       value={`${pnlUp?'+':''}₹${(selected.netPnl??0).toLocaleString()}`}       good={pnlUp} />
-                    <MetricCell label="Total Return"  value={`${pnlUp?'+':''}${(selected.totalReturn??0).toFixed(2)}%`}          good={pnlUp} />
-                    <MetricCell label="Sharpe Ratio"  value={(selected.sharpe??0).toFixed(2)}       good={(selected.sharpe??0) > 1} />
-                    <MetricCell label="Sortino"       value={(selected.sortino??0).toFixed(2)}      good={(selected.sortino??0) > 1.5} />
-                    <MetricCell label="Max Drawdown"  value={`${(selected.maxDrawdown??0).toFixed(1)}%`} good={(selected.maxDrawdown??0) < 15} />
-                    <MetricCell label="Win Rate"      value={`${(selected.winRate??0).toFixed(1)}%`}     good={(selected.winRate??0) > 55} />
-                    <MetricCell label="Profit Factor" value={(selected.profitFactor??0).toFixed(2)} good={(selected.profitFactor??0) > 1.5} />
-                    <MetricCell label="Calmar"        value={(selected.calmar??0).toFixed(2)}       good={(selected.calmar??0) > 1} />
-                    <MetricCell label="Avg Win"       value={`₹${(selected.avgWin??0).toLocaleString()}`}          good />
-                    <MetricCell label="Avg Loss"      value={`₹${Math.abs(selected.avgLoss??0).toLocaleString()}`} good={null} />
-                    <MetricCell label="Total Trades"  value={String(selected.totalTrades??0)} good={null} />
-                    <MetricCell label="Ann. Return"   value={`${(selected.annReturn??0).toFixed(2)}%`} good={(selected.annReturn??0) > 15} />
+                    <MetricCell label="Net P&L"
+                      value={`${(selected.netPnl??0)>=0?'+':''}₹${Math.round(selected.netPnl??0).toLocaleString('en-IN')}`}
+                      good={pnlUp} />
+                    <MetricCell label="Total Return"
+                      value={`${(selected.totalReturn??0)>=0?'+':''}${(selected.totalReturn??0).toFixed(2)}%`}
+                      good={pnlUp} />
+                    <MetricCell label="Sharpe Ratio"
+                      value={(selected.sharpe??0).toFixed(2)}
+                      good={(selected.sharpe??0) > 1} />
+                    <MetricCell label="Sortino"
+                      value={(selected.sortino??0).toFixed(2)}
+                      good={(selected.sortino??0) > 1.5} />
+                    <MetricCell label="Max Drawdown"
+                      value={`${(selected.maxDrawdown??0).toFixed(2)}%`}
+                      good={(selected.maxDrawdown??0) < 15} />
+                    <MetricCell label="Win Rate"
+                      value={`${(selected.winRate??0).toFixed(1)}%`}
+                      good={(selected.winRate??0) > 55} />
+                    <MetricCell label="Profit Factor"
+                      value={(selected.profitFactor??0).toFixed(2)}
+                      good={(selected.profitFactor??0) > 1.5} />
+                    <MetricCell label="Calmar"
+                      value={(selected.calmar??0).toFixed(2)}
+                      good={(selected.calmar??0) > 1} />
+                    <MetricCell label="Avg Win"
+                      value={`₹${Math.round(selected.avgWin??0).toLocaleString('en-IN')}`}
+                      good />
+                    <MetricCell label="Avg Loss"
+                      value={`₹${Math.round(Math.abs(selected.avgLoss??0)).toLocaleString('en-IN')}`}
+                      good={null} />
+                    <MetricCell label="Total Trades"
+                      value={String(selected.totalTrades??0)}
+                      good={null} />
+                    <MetricCell label="Ann. Return"
+                      value={`${(selected.annReturn??0)>=0?'+':''}${(selected.annReturn??0).toFixed(2)}%`}
+                      good={(selected.annReturn??0) > 15} />
                   </div>
                 </div>
 
