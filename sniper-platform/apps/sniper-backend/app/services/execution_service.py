@@ -96,11 +96,10 @@ class ExecutionService:
         return broker
 
     def load_models(self, models_dir: str) -> None:
+        # Prefers a trained PPO .zip if present, else linear weights (.joblib).
         path = Path(models_dir) / 'ppo_execution.joblib'
-        if path.exists():
-            artifact = joblib.load(path)
-            if 'weights' in artifact:
-                self.rl_agent.weights = artifact['weights']
+        if path.exists() or (Path(models_dir) / 'ppo_execution.zip').exists():
+            self.rl_agent.load_model(str(path))
 
     async def ensure_broker_account(self) -> None:
         provider = (self.settings.broker_provider or 'paper').strip().lower()

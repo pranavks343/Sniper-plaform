@@ -92,6 +92,6 @@ class FeatureEngineering:
             'realized_volatility': v['realized_volatility'],
             'ema_20': self._ema(close, 20),
             'ema_50': self._ema(close, 50),
-        }
+        }   
 
         return np.array(list(features.values()), dtype=float)

@@ -16,7 +16,7 @@ class TradingSignal:
 
 
 class SignalGenerator:
-    def calculate_ema(self, prices: np.ndarray, period: int) -> float:
+    def calculate_ema(self, prices: np.ndarray, period: int) -> float:  
         if len(prices) < period:
             return float(prices[-1])
         alpha = 2 / (period + 1)

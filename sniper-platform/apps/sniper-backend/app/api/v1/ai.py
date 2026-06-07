@@ -5,13 +5,18 @@ POST /api/v1/ai/chat
   body: { message: str, context: AIChatContext }
   reply: { reply: str }
 
-Uses OpenAI Chat Completions via REST API.
+The copilot runs as a **LangGraph** state-machine agent: the question is
+classified, routed through a conditional edge to a specialist node
+(risk / regime / strategy / backtest / general) and answered with an
+intent-focused prompt. Each node calls OpenAI Chat Completions via REST.
+If LangGraph is unavailable the endpoint falls back to a single LLM call.
 """
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
+from functools import partial
 from typing import Any
 
 import httpx
@@ -19,6 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
+from app.core.copilot.graph import run_copilot
 from app.dependencies import Container, get_container, verify_token
 
 logger = logging.getLogger(__name__)
@@ -301,14 +307,23 @@ async def ai_chat(
         )
 
     context_blob = await _assemble_context(payload.context, container)
-    reply = await _call_llm(
-        SYSTEM_PROMPT,
-        context_blob,
-        payload.message,
-        api_key,
-        model,
-        float(getattr(settings, 'openai_request_timeout_seconds', 45.0)),
-        float(getattr(settings, 'openai_retry_delay_seconds', 1.5)),
-        int(getattr(settings, 'openai_max_retries', 1)),
+
+    # Bind the OpenAI transport config so the graph nodes get a 3-arg llm_fn:
+    #   (system_prompt, context_blob, user_message) -> reply
+    llm_fn = partial(
+        _call_llm,
+        api_key=api_key,
+        model=model,
+        request_timeout_seconds=float(getattr(settings, 'openai_request_timeout_seconds', 45.0)),
+        retry_delay_seconds=float(getattr(settings, 'openai_retry_delay_seconds', 1.5)),
+        max_retries=int(getattr(settings, 'openai_max_retries', 1)),
     )
+
+    # Preferred path: route the question through the LangGraph copilot agent.
+    reply = await run_copilot(SYSTEM_PROMPT, context_blob, payload.message, llm_fn)
+
+    # Fallback: LangGraph unavailable → single LLM call (same prompt/context).
+    if reply is None:
+        reply = await llm_fn(SYSTEM_PROMPT, context_blob, payload.message)
+
     return AIChatResponse(reply=reply)
