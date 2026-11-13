@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
 
-import { ClerkTokenSync } from '@/components/auth/clerk-token-sync';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -19,10 +17,8 @@ const themeScript = `
 })();
 `;
 
-const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const shell = (
+  return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -32,15 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         style={{ background: 'var(--tv-bg-base)', color: 'var(--tv-text-primary)' }}
         suppressHydrationWarning
       >
-        {isClerkConfigured && <ClerkTokenSync />}
         {children}
       </body>
     </html>
   );
-
-  if (isClerkConfigured) {
-    return <ClerkProvider>{shell}</ClerkProvider>;
-  }
-
-  return shell;
 }

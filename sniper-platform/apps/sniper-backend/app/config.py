@@ -87,7 +87,6 @@ class Settings(BaseSettings):
     upstox_redirect_uri: str = ''
     upstox_access_token: str = ''
 
-    clerk_jwks_url: str = ''
     skip_auth: bool = False
 
     openai_api_key: str = ''
