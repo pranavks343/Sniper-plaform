@@ -1,13 +1,9 @@
-import { auth } from '@clerk/nextjs/server';
-
 import { TradingViewPreload } from '@/components/charts/tradingview-preload';
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
 import { MarketNewsProvider } from '@/components/providers/market-news-provider';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  await auth.protect();
-
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <MarketNewsProvider>
       <div className="flex min-h-screen" style={{ background: 'var(--tv-bg-base)' }}>

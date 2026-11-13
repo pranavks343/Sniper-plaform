@@ -1,6 +1,5 @@
 'use client';
 
-import { useClerk, useUser } from '@clerk/nextjs';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -104,8 +103,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function ProfilePage() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
   const { darkMode, toggleDarkMode } = useUiStore();
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -121,17 +118,11 @@ export default function ProfilePage() {
     return () => ctx.revert();
   }, []);
 
-  const displayName = user?.fullName ?? user?.username ?? 'Trader';
-  const initials    = user
-    ? (user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')
-    : 'T';
-  const email       = user?.primaryEmailAddress?.emailAddress ?? '—';
-  const createdAt   = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
-    : '—';
-  const lastActive  = user?.updatedAt
-    ? new Date(user.updatedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
-    : '—';
+  const displayName = 'Trader';
+  const initials    = 'T';
+  const email       = '—';
+  const createdAt   = '—';
+  const lastActive  = '—';
 
   return (
     <div ref={pageRef} className="max-w-3xl mx-auto space-y-5">
@@ -154,10 +145,10 @@ export default function ProfilePage() {
       >
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          {user?.imageUrl ? (
+          {false ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.imageUrl}
+              src=""
               alt={displayName}
               className="h-20 w-20 rounded-full object-cover"
               style={{ border: '3px solid var(--tv-border-light)' }}
@@ -201,7 +192,7 @@ export default function ProfilePage() {
         {/* Edit button */}
         <button
           className="tv-btn tv-btn-ghost flex items-center gap-1.5 flex-shrink-0"
-          onClick={() => user?.update({})}
+          disabled
         >
           <Edit3 size={13} />
           Edit Profile
@@ -236,7 +227,7 @@ export default function ProfilePage() {
                 border: '1px solid var(--tv-border)',
               }}
             >
-              {user?.id?.slice(0, 24) ?? '—'}…
+              guest
             </span>
           </div>
         </div>
@@ -342,7 +333,7 @@ export default function ProfilePage() {
         </div>
         <button
           type="button"
-          onClick={() => signOut({ redirectUrl: '/' })}
+          onClick={() => { window.location.href = '/'; }}
           className="tv-btn flex items-center gap-2"
           style={{
             background: 'rgba(239,83,80,0.12)',

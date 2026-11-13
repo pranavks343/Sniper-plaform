@@ -528,7 +528,7 @@ export default function LandingPageClient() {
           <span className="hidden sm:flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--tv-bull)' }}>
             <span className="live-dot" />NSE Live
           </span>
-          <Link href="/login">
+          <Link href="/dashboard">
             <button className="tv-btn tv-btn-ghost text-[13px] py-1.5 px-3">Sign In</button>
           </Link>
           <Link href="/register">
@@ -619,7 +619,7 @@ export default function LandingPageClient() {
               Start Trading Free <ArrowRight size={15} />
             </button>
           </Link>
-          <Link href="/login">
+          <Link href="/dashboard">
             <button className="tv-btn tv-btn-ghost px-6 py-3 text-[14px]" style={{ borderRadius: 8 }}>
               Sign In
             </button>

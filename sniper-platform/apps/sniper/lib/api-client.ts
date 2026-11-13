@@ -43,10 +43,6 @@ const api = axios.create({
   timeout: 35000,
 });
 
-// Throttle 401 redirect to avoid dashboard ↔ login loop (e.g. token not synced yet).
-const AUTH_REDIRECT_THROTTLE_MS = 5000;
-let lastAuthRedirectAt = 0;
-
 function isAuthRequest(url: string | undefined): boolean {
   if (!url) return false;
   const path = url.startsWith('http') ? new URL(url).pathname : url;
@@ -77,20 +73,6 @@ api.interceptors.response.use(
 
     const status = error?.response?.status;
     const detail = error?.response?.data?.detail;
-    const isAuthError =
-      status === 401 ||
-      status === 403 ||
-      (typeof detail === 'string' && /missing authorization|unauthorized|invalid token/i.test(detail));
-
-    if (isAuthError && typeof window !== 'undefined') {
-      const now = Date.now();
-      if (now - lastAuthRedirectAt >= AUTH_REDIRECT_THROTTLE_MS) {
-        lastAuthRedirectAt = now;
-        window.location.href = '/login';
-      }
-      return Promise.reject(new Error('Session expired or not signed in. Redirecting to login.'));
-    }
-
     const message = isNetworkOrTimeout
       ? (error?.code === 'ECONNABORTED'
           ? (backendHealthy

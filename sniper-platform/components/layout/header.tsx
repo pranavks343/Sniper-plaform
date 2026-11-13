@@ -13,7 +13,6 @@ import {
   User,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useClerk, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import gsap from 'gsap';
 
@@ -54,8 +53,6 @@ function TickerCell({
 
 /* ─── Profile dropdown ───────────────────────────────────────────────────── */
 function ProfileDropdown() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
   const { darkMode, toggleDarkMode, initTheme } = useUiStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -76,11 +73,9 @@ function ProfileDropdown() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const initials = user
-    ? (user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')
-    : 'T';
-  const displayName = user?.fullName ?? user?.username ?? 'Trader';
-  const email = user?.primaryEmailAddress?.emailAddress ?? '';
+  const initials = 'T';
+  const displayName = 'Trader';
+  const email = '';
 
   return (
     <div ref={ref} className="relative">
@@ -230,17 +225,16 @@ function ProfileDropdown() {
             className="border-t py-1"
             style={{ borderColor: 'var(--tv-border)' }}
           >
-            <button
-              type="button"
-              onClick={() => signOut({ redirectUrl: '/' })}
+            <Link
+              href="/"
               className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] transition w-full text-left"
               style={{ color: '#ef5350' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,83,80,0.08)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <LogOut size={14} />
-              Sign Out
-            </button>
+              Exit to Home
+            </Link>
           </div>
         </div>
       )}
