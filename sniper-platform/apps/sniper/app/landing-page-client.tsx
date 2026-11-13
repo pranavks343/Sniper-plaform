@@ -529,9 +529,6 @@ export default function LandingPageClient() {
             <span className="live-dot" />NSE Live
           </span>
           <Link href="/dashboard">
-            <button className="tv-btn tv-btn-ghost text-[13px] py-1.5 px-3">Sign In</button>
-          </Link>
-          <Link href="/register">
             <button className="tv-btn tv-btn-primary text-[13px] py-1.5 px-4 flex items-center gap-1.5">
               Get Started <ArrowRight size={13} />
             </button>
@@ -611,17 +608,12 @@ export default function LandingPageClient() {
 
         {/* CTAs */}
         <div className="hero-cta mt-8 flex items-center gap-3">
-          <Link href="/register">
+          <Link href="/dashboard">
             <button
               className="tv-btn tv-btn-primary px-7 py-3 text-[14px] font-semibold flex items-center gap-2"
               style={{ boxShadow: '0 4px 24px rgba(41,98,255,0.4)', borderRadius: 8 }}
             >
               Start Trading Free <ArrowRight size={15} />
-            </button>
-          </Link>
-          <Link href="/dashboard">
-            <button className="tv-btn tv-btn-ghost px-6 py-3 text-[14px]" style={{ borderRadius: 8 }}>
-              Sign In
             </button>
           </Link>
         </div>
@@ -879,7 +871,7 @@ export default function LandingPageClient() {
         <p className="text-[14px] mb-7 relative" style={{ color: 'var(--tv-text-secondary)' }}>
           Join thousands of traders using Sniper to execute with precision.
         </p>
-        <Link href="/register">
+        <Link href="/dashboard">
           <button
             className="tv-btn tv-btn-primary px-8 py-3.5 text-[14px] font-semibold relative"
             style={{ boxShadow: '0 4px 24px rgba(41,98,255,0.4)', borderRadius: 8 }}
